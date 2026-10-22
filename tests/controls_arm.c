@@ -104,16 +104,16 @@ int test_controls_func_frequency_commit_and_cancel(void)
     Tap(Key_1_1, 100U); /* 1 */
     Tap(Key_5_1, 100U); /* . */
     Tap(Key_2_1, 100U); /* 4 */
-    Tap(Key_2_3, 100U); /* 6 */
+    Tap(Key_2_1, 100U); /* 4 */
     Tap(Key_4_3, 100U); /* 9 */
     Tap(Key_4_1, 100U); /* 7 */
     Tap(Key_4_2, 100U); /* 8 */
     CHECK(store_calls == 0U && Scan_Active() == 0U && RadioVfo_Split() == 0U);
     Tap(Key_5_3, 100U);
-    CHECK(Entry_Active() == 0U && menu.rf_hz == 21469780U && synth_frequency == 21469780U);
+    CHECK(Entry_Active() == 0U && menu.rf_hz == 21449780U && synth_frequency == 21449780U);
     Tap(Key_5_3, 100U); Tap(Key_5_3, 100U); CHECK(Entry_Active() == 0U);
     Tap(Key_5_3, 100U); now_tick += FUNC_TIMEOUT_TICKS; Entry_Task();
-    CHECK(Entry_Active() == 0U && menu.rf_hz == 21469780U);
+    CHECK(Entry_Active() == 0U && menu.rf_hz == 21449780U);
     return 0;
 }
 
@@ -288,9 +288,9 @@ int test_func_restarts_frequency_after_error_without_waiting(void)
     CHECK(strcmp(Entry_Status(), "FUNC") == 0 && Entry_ChannelTarget() == 0U);
     now_tick += 500U; Entry_Task(); CHECK(Entry_Active() != 0U); /* Новый таймер. */
     Tap(Key_1_2, 100U); Tap(Key_1_1, 100U); Tap(Key_2_1, 100U);
-    Tap(Key_2_3, 100U); Tap(Key_4_3, 100U); Tap(Key_4_1, 100U); Tap(Key_4_2, 100U);
+    Tap(Key_2_1, 100U); Tap(Key_4_3, 100U); Tap(Key_4_1, 100U); Tap(Key_4_2, 100U);
     Tap(Key_5_3, 100U);
-    CHECK(Entry_Active() == 0U && menu.rf_hz == 21469780U);
+    CHECK(Entry_Active() == 0U && menu.rf_hz == 21449780U);
     return 0;
 }
 
@@ -304,5 +304,74 @@ int test_func_restarts_channel_after_error_and_preserves_target(void)
     CHECK(strcmp(Entry_Status(), "FUNC") == 0);
     Tap(Key_1_1, 100U); Tap(Key_5_2, 100U); Tap(Key_5_2, 100U); Tap(Key_5_3, 100U);
     CHECK(Entry_Active() == 0U && MemoryControl_Channel() == 99U && menu.rf_hz == 28200000U);
+    return 0;
+}
+
+/* Полный ввод семи цифр из двухзначного исходного диапазона, включая ведущий ноль. */
+static void EnterHz(uint32_t hz)
+{
+    uint32_t scale;
+    for (scale = 1000000U; scale != 0U; scale /= 10U)
+        (void)FreqEntry_Append((char)('0' + ((hz / 10U) / scale) % 10U));
+    Tap(Key_5_3, 100U);
+}
+
+int test_direct_entry_accepts_all_band_edges_and_switches_band(void)
+{
+    uint8_t band, edge;
+    for (band = 0U; band < Radio_BandsCount(); band++)
+    {
+        for (edge = 0U; edge < 2U; edge++)
+        {
+            uint32_t hz = (edge == 0U) ? bands[band].min_hz : bands[band].max_hz;
+            InitControls(); Tap(Key_5_3, 100U); EnterHz(hz);
+            CHECK(Entry_Active() == 0U && menu.rf_hz == hz && menu.band_index == band);
+            CHECK(synth_frequency == hz && Radio_FindBand(hz) == band);
+        }
+    }
+    return 0;
+}
+
+int test_direct_entry_rejects_gaps_without_changing_tuning(void)
+{
+    uint8_t band, edge;
+    for (band = 0U; band < Radio_BandsCount(); band++)
+    {
+        for (edge = 0U; edge < 2U; edge++)
+        {
+            uint32_t hz = (edge == 0U) ? bands[band].min_hz - 10U : bands[band].max_hz + 10U;
+            InitControls(); Radio_SetFrequency(28200000U);
+            Tap(Key_5_3, 100U); EnterHz(hz);
+            CHECK(Entry_Active() != 0U && strcmp(Entry_Status(), "INPUT ERR") == 0);
+            CHECK(menu.rf_hz == 28200000U && menu.band_index == 8U && synth_frequency == 28200000U);
+            CHECK(Radio_FindBand(hz) == Radio_BandsCount());
+        }
+    }
+    return 0;
+}
+
+int test_ten_mhz_error_func_restart_and_valid_ten_point_one_mhz(void)
+{
+    InitControls(); Radio_SetFrequency(28200000U);
+    Tap(Key_5_3, 100U); EnterHz(10000000U);
+    CHECK(strcmp(Entry_Status(), "INPUT ERR") == 0 && menu.rf_hz == 28200000U);
+    Tap(Key_5_3, 100U); CHECK(menu.freq_input_len == 0U && Entry_Active() != 0U);
+    EnterHz(10100000U);
+    CHECK(Entry_Active() == 0U && menu.rf_hz == 10100000U && menu.band_index == 3U);
+    return 0;
+}
+
+int test_invalid_direct_entry_preserves_memory_mode_and_channel(void)
+{
+    InitControls();
+    cache_used[7] = 1U; cache[7] = (radio_preset_t){7100000U, RADIO_LSB, 0U, 0U, 2U};
+    MemoryControl_Select(7U); MemoryControl_ToggleMode();
+    CHECK(menu.rf_hz == 7100000U && MemoryControl_Mode() != 0U);
+    Tap(Key_5_3, 100U);
+    (void)FreqEntry_Append('8'); /* 8 МГц не входит ни в один диапазон. */
+    Tap(Key_5_3, 100U);
+    CHECK(strcmp(Entry_Status(), "INPUT ERR") == 0);
+    CHECK(MemoryControl_Mode() != 0U && MemoryControl_Channel() == 7U);
+    CHECK(menu.rf_hz == 7100000U && menu.band_index == 2U);
     return 0;
 }

@@ -42,7 +42,9 @@ static void Confirm(void)
     }
     else
     {
-        if (FreqEntry_Parse(&hz) == 0U) { error = 1U; return; }
+        /* Сначала вся проверка: ошибочная частота не меняет ни RF, ни режим памяти. */
+        if (FreqEntry_Parse(&hz) == 0U || Radio_FindBand(hz) >= Radio_BandsCount())
+        { error = 1U; return; }
         MemoryControl_LeaveMode();
         Radio_SetFrequency(hz);
     }

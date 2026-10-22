@@ -43,6 +43,14 @@ uint8_t Radio_BandsCount(void)
     return (uint8_t)(sizeof(bands) / sizeof(bands[0]));
 }
 
+uint8_t Radio_FindBand(uint32_t hz)
+{
+    uint8_t i;
+    for (i = 0U; i < Radio_BandsCount(); i++)
+        if (hz >= bands[i].min_hz && hz <= bands[i].max_hz) return i;
+    return Radio_BandsCount();
+}
+
 /* Возвращает количество доступных шагов настройки. */
 static uint8_t StepsCount(void)
 {
@@ -155,11 +163,8 @@ void Radio_SetFrequency(uint32_t hz)
     if (hz < RADIO_MIN_HZ) hz = RADIO_MIN_HZ;
     if (hz > RADIO_MAX_HZ) hz = RADIO_MAX_HZ;
     menu.rf_hz = hz;
-    for (i = 0U; i < Radio_BandsCount(); i++)
-    {
-        if (hz >= bands[i].min_hz && hz <= bands[i].max_hz)
-        { menu.band_index = i; break; }
-    }
+    i = Radio_FindBand(hz);
+    if (i < Radio_BandsCount()) menu.band_index = i;
     Radio_ApplySynth();
     menu.need_redraw = 1U;
 }
@@ -172,7 +177,7 @@ void Radio_TuneSteps(int32_t steps)
     uint32_t max_hz = RADIO_MAX_HZ;
     const band_t *band = &bands[menu.band_index];
     if (steps == 0) return;
-    /* Общие пределы нужны только GEN, введённому явно. В выбранном КВ-диапазоне
+    /* Общие пределы оставлены для GEN из прежних настроек. В выбранном КВ-диапазоне
      * энкодер упирается в края и не переключает диапазон через Radio_SetFrequency. */
     if (menu.rf_hz >= band->min_hz && menu.rf_hz <= band->max_hz)
     { min_hz = band->min_hz; max_hz = band->max_hz; }

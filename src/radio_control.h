@@ -6,6 +6,8 @@
 
 /* Возвращает количество диапазонов в таблице проекта. */
 uint8_t Radio_BandsCount(void);
+/* Индекс диапазона для частоты в Гц; Radio_BandsCount(), если она вне таблицы. */
+uint8_t Radio_FindBand(uint32_t hz);
 
 /* Ограничивает частоту границами выбранного диапазона. */
 void Radio_ClampRf(void);
@@ -27,7 +29,7 @@ void Radio_CycleIF(void);
 
 /* Изменяет RF на число щелчков энкодера с ограничением по диапазону. */
 void Radio_TuneSteps(int32_t steps);
-/* Прямой ввод/канал: 0,1..30 МГц, диапазон определяется по частоте. */
+/* Внутреннее применение RF. Прямой ввод сначала проверяет Radio_FindBand(). */
 void Radio_SetFrequency(uint32_t hz);
 
 void Radio_InitTS(void);
