@@ -27,6 +27,7 @@
 
 - `powershell -ExecutionPolicy Bypass -File scripts/test.ps1` — проверки логики TS, CRC и адресации EEPROM без платы.
 - `powershell -ExecutionPolicy Bypass -File scripts/build.ps1` — полная сборка и линковка ARM, предупреждения считаются ошибками.
+- После изменений клавиатуры/каналов выполняйте также `scripts/test-arm.ps1`: Thumb-код исполняется в Unicorn; установка зависимости — `tests/requirements.txt`, инструкция — `firmware/KEYBOARD.md`.
 - Пути инструментов можно передать через `-ToolchainBin` и `-PacksRoot`; подробности в `firmware/README.md`.
 - При добавлении C-файлов обновляйте также список в `.uvprojx`. Скрипт сборки обнаруживает `src/*.c` автоматически.
 - Не отправляйте `Objects`, `Listings`, `RTE`, конфигурацию окон IDE, скачанные инструменты, старые архивы и секреты. Они исключены через `.gitignore`.

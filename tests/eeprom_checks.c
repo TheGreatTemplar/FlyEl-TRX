@@ -9,6 +9,18 @@ static uint8_t sent_high;
 static uint8_t sent_low;
 static uint16_t sent_length;
 static i2c2_soft_status_t bus_failure;
+static uint8_t write_count;
+static uint8_t write_first;
+static uint8_t write_last;
+
+i2c2_soft_status_t I2C2_Soft_Write(uint8_t address, const uint8_t *data, uint16_t length)
+{
+    (void)address;
+    write_count++;
+    sent_high = data[0]; sent_low = data[1]; sent_length = length;
+    write_first = data[2]; write_last = data[length - 1U];
+    return bus_failure;
+}
 
 i2c2_soft_status_t I2C2_Soft_Probe(uint8_t address)
 {
@@ -83,5 +95,21 @@ int test_read_rejects_bad_ranges(void)
     CHECK(AT24C256_Read(0x50U, 0U, 0, 1U) == I2C2_SOFT_ARG_ERROR);
     CHECK(AT24C256_Read(0x58U, 0U, data, 1U) == I2C2_SOFT_ARG_ERROR);
     CHECK(read_count == 0U);
+    return 0;
+}
+
+int test_page_write_address_and_limits(void)
+{
+    uint8_t data[2] = { 0x12U, 0x34U };
+    write_count = 0U; bus_failure = I2C2_SOFT_OK;
+    CHECK(AT24C256_WritePage(0x57U, 0x7FFEU, data, 2U) == I2C2_SOFT_OK);
+    CHECK(write_count == 1U && sent_high == 0x7FU && sent_low == 0xFEU);
+    CHECK(sent_length == 4U && write_first == 0x12U && write_last == 0x34U);
+    CHECK(AT24C256_WritePage(0x50U, 63U, data, 2U) == I2C2_SOFT_ARG_ERROR);
+    CHECK(AT24C256_WritePage(0x50U, 0x7FFFU, data, 2U) == I2C2_SOFT_ARG_ERROR);
+    CHECK(AT24C256_WritePage(0x58U, 0U, data, 1U) == I2C2_SOFT_ARG_ERROR);
+    CHECK(AT24C256_WritePage(0x50U, 0U, data, 65U) == I2C2_SOFT_ARG_ERROR);
+    CHECK(AT24C256_WritePage(0x50U, 0U, 0, 1U) == I2C2_SOFT_ARG_ERROR);
+    CHECK(write_count == 1U);
     return 0;
 }

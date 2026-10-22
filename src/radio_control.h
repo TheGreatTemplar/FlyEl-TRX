@@ -27,6 +27,8 @@ void Radio_CycleIF(void);
 
 /* Изменяет RF на число щелчков энкодера с ограничением по диапазону. */
 void Radio_TuneSteps(int32_t steps);
+/* Прямой ввод/канал: 0,1..30 МГц, диапазон определяется по частоте. */
+void Radio_SetFrequency(uint32_t hz);
 
 void Radio_InitTS(void);
 

@@ -136,6 +136,20 @@ i2c2_soft_status_t I2C2_Soft_Probe(uint8_t address)
     return (status == I2C2_SOFT_OK) ? stopped : status;
 }
 
+/* STOP запускает внутреннюю запись EEPROM; ожидание готовности — задача вызывающего. */
+i2c2_soft_status_t I2C2_Soft_Write(uint8_t address, const uint8_t *data, uint16_t length)
+{
+    i2c2_soft_status_t status;
+    i2c2_soft_status_t stopped;
+    uint16_t i;
+    if (address > 0x7FU || data == 0 || length == 0U) return I2C2_SOFT_ARG_ERROR;
+    status = Start();
+    if (status == I2C2_SOFT_OK) status = WriteByte((uint8_t)((uint32_t)address << 1U));
+    for (i = 0U; status == I2C2_SOFT_OK && i < length; i++) status = WriteByte(data[i]);
+    stopped = Stop();
+    return (status == I2C2_SOFT_OK) ? stopped : status;
+}
+
 /* Передаёт префикс, repeated START и чтение; последний байт завершается NACK. */
 i2c2_soft_status_t I2C2_Soft_WriteRead(uint8_t address, const uint8_t *prefix,
                                     uint16_t prefix_len, uint8_t *data, uint16_t length)

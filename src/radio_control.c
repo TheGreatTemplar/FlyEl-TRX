@@ -148,50 +148,32 @@ void Radio_CycleIF(void)
     menu.need_redraw = 1U;
 }
 
-/* Изменяет RF на число щелчков энкодера с ограничением по диапазону. */
-void Radio_TuneSteps(int32_t steps)
+/* Применяет частоту приёмника; вне любительских диапазонов экран покажет GEN. */
+void Radio_SetFrequency(uint32_t hz)
 {
-    uint32_t step;
-    uint32_t delta;
-
-    if (steps == 0)
+    uint8_t i;
+    if (hz < RADIO_MIN_HZ) hz = RADIO_MIN_HZ;
+    if (hz > RADIO_MAX_HZ) hz = RADIO_MAX_HZ;
+    menu.rf_hz = hz;
+    for (i = 0U; i < Radio_BandsCount(); i++)
     {
-        return;
+        if (hz >= bands[i].min_hz && hz <= bands[i].max_hz)
+        { menu.band_index = i; break; }
     }
-
-    step = steps_hz[menu.step_index];
-
-    if (steps > 0)
-    {
-        delta = step * (uint32_t)steps;
-
-        if (delta > (bands[menu.band_index].max_hz - menu.rf_hz))
-        {
-            menu.rf_hz = bands[menu.band_index].max_hz;
-        }
-        else
-        {
-            menu.rf_hz += delta;
-        }
-    }
-    else
-    {
-        delta = step * (uint32_t)(-steps);
-
-        if (delta > (menu.rf_hz - bands[menu.band_index].min_hz))
-        {
-            menu.rf_hz = bands[menu.band_index].min_hz;
-        }
-        else
-        {
-            menu.rf_hz -= delta;
-        }
-    }
-
     Radio_ApplySynth();
     menu.need_redraw = 1U;
 }
 
+/* 64-битный промежуточный результат исключает переполнение при накоплении энкодера. */
+void Radio_TuneSteps(int32_t steps)
+{
+    int64_t hz;
+    if (steps == 0) return;
+    hz = (int64_t)menu.rf_hz + (int64_t)steps * steps_hz[menu.step_index];
+    if (hz < (int64_t)RADIO_MIN_HZ) hz = RADIO_MIN_HZ;
+    if (hz > (int64_t)RADIO_MAX_HZ) hz = RADIO_MAX_HZ;
+    Radio_SetFrequency((uint32_t)hz);
+}
 
 /* Сбрасывает автомат TS при включении аппарата. */
 void Radio_InitTS(void)

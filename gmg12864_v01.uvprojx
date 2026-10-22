@@ -668,7 +668,160 @@
               <FileType>5</FileType>
               <FilePath>.\src\ui_widgets.h</FilePath>
             </File>
+            <File>
+              <FileName>key_gesture.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\key_gesture.c</FilePath>
+            </File>
+            <File>
+              <FileName>key_gesture.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\key_gesture.h</FilePath>
+            </File>
+            <File>
+              <FileName>key_layout.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\key_layout.c</FilePath>
+            </File>
+            <File>
+              <FileName>key_layout.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\key_layout.h</FilePath>
+            </File>
+            <File>
+              <FileName>radio_mode.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\radio_mode.c</FilePath>
+            </File>
+            <File>
+              <FileName>radio_mode.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\radio_mode.h</FilePath>
+            </File>
+            <File>
+              <FileName>radio_vfo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\radio_vfo.c</FilePath>
+            </File>
+            <File>
+              <FileName>radio_vfo.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\radio_vfo.h</FilePath>
+            </File>
+            <File>
+              <FileName>keyboard.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\keyboard.c</FilePath>
+            </File>
+            <File>
+              <FileName>keyboard.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\keyboard.h</FilePath>
+            </File>
+            <File>
+              <FileName>entry_controller.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\entry_controller.c</FilePath>
+            </File>
+            <File>
+              <FileName>entry_controller.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\entry_controller.h</FilePath>
+            </File>
+            <File>
+              <FileName>frequency_parse.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\frequency_parse.c</FilePath>
+            </File>
+            <File>
+              <FileName>frequency_parse.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\frequency_parse.h</FilePath>
+            </File>
+            <File>
+              <FileName>memory_control.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\memory_control.c</FilePath>
+            </File>
+            <File>
+              <FileName>memory_control.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\memory_control.h</FilePath>
+            </File>
+            <File>
+              <FileName>memory_record.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\memory_record.c</FilePath>
+            </File>
+            <File>
+              <FileName>memory_record.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\memory_record.h</FilePath>
+            </File>
+            <File>
+              <FileName>memory_store.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\memory_store.c</FilePath>
+            </File>
+            <File>
+              <FileName>memory_store.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\memory_store.h</FilePath>
+            </File>
+            <File>
+              <FileName>radio_panel.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\radio_panel.c</FilePath>
+            </File>
+            <File>
+              <FileName>radio_panel.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\radio_panel.h</FilePath>
+            </File>
+            <File>
+              <FileName>scan_control.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\scan_control.c</FilePath>
+            </File>
+            <File>
+              <FileName>scan_control.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\scan_control.h</FilePath>
+            </File>
+            <File>
+              <FileName>settings_control.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\settings_control.c</FilePath>
+            </File>
+            <File>
+              <FileName>settings_control.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\settings_control.h</FilePath>
+            </File>
+            <File>
+              <FileName>ui_settings.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\ui_settings.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_settings.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\ui_settings.h</FilePath>
+            </File>
+            <File>
+              <FileName>ui_status.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\ui_status.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_status.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\ui_status.h</FilePath>
+            </File>
           </Files>
+        </Group>
+        <Group>
+          <GroupName>::CMSIS</GroupName>
         </Group>
       </Groups>
     </Target>
@@ -679,7 +832,9 @@
     <components>
       <component Cclass="CMSIS" Cgroup="CORE" Cvendor="ARM" Cversion="5.5.0" condition="ARMv6_7_8-M Device">
         <package name="CMSIS" schemaVersion="1.7.7" url="https://www.keil.com/pack/" vendor="ARM" version="5.8.0"/>
-        <targetInfos><targetInfo name="GMG12864"/></targetInfos>
+        <targetInfos>
+          <targetInfo name="GMG12864"/>
+        </targetInfos>
       </component>
     </components>
     <files/>

@@ -1,7 +1,6 @@
 #ifndef INPUT_H
 #define INPUT_H
 
-#include "stm32f10x.h"
 #include <stdint.h>
 
 typedef enum
@@ -26,7 +25,7 @@ typedef enum
     INPUT_KEY_DOT,
     INPUT_KEY_ENTER,
 
-    /* Physical CD4017 package pin, then OUT number; no functions assigned. */
+    /* Физический вывод CD4017, затем OUT; функции заданы в key_layout.c. */
     Key_2_1,
     Key_2_2,
     Key_2_3,

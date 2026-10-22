@@ -7,9 +7,17 @@
 /* Set to 0U to restore the original Terminus main frequency. */
 #define MAIN_FREQ_USE_SW2019        1U
 #define ADC_VREF_MV                 3300U
-#define VFO_B_DEMO_HZ              21469780UL
 
 #define FREQ_INPUT_MAX_LEN          11U
 #define MENU_ITEMS                  5U
+
+/* До уточнения раскладки: каналы 1..100, три условных фильтра на каждый режим. */
+#define MEMORY_CHANNEL_COUNT        100U
+#define MEMORY_EEPROM_BASE          0x4000U
+#define RADIO_FILTER_COUNT          3U
+#define SCAN_INTERVAL_TICKS         400U
+#define FUNC_TIMEOUT_TICKS          20000U
+#define RADIO_MIN_HZ                100000UL
+#define RADIO_MAX_HZ                30000000UL
 
 #endif

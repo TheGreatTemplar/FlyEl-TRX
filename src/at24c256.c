@@ -1,5 +1,21 @@
 #include "at24c256.h"
 
+/* По datasheet AT24C256C: страница 64 байта; переход через границу запрещён. */
+i2c2_soft_status_t AT24C256_WritePage(uint8_t address, uint16_t offset,
+                                   const uint8_t *data, uint16_t length)
+{
+    uint8_t packet[AT24C256_PAGE_SIZE + 2U];
+    uint16_t i;
+    if (address < 0x50U || address > 0x57U || data == 0 || length == 0U ||
+        length > AT24C256_PAGE_SIZE || (uint32_t)offset + length > AT24C256_CAPACITY ||
+        (offset % AT24C256_PAGE_SIZE) + length > AT24C256_PAGE_SIZE)
+        return I2C2_SOFT_ARG_ERROR;
+    packet[0] = (uint8_t)(offset >> 8U);
+    packet[1] = (uint8_t)offset;
+    for (i = 0U; i < length; i++) packet[i + 2U] = data[i];
+    return I2C2_Soft_Write(address, packet, (uint16_t)(length + 2U));
+}
+
 /* Ищет первый ответивший адрес 0x50–0x57; таймаут не трактуется как отсутствие устройства. */
 i2c2_soft_status_t AT24C256_Find(uint8_t *address)
 {

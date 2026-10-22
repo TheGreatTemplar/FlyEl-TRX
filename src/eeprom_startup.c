@@ -95,3 +95,6 @@ const char *EEPROM_TestStatus(void)
 {
     return eeprom_status;
 }
+
+/* Загрузка/запись каналов начинается только после неизменяемого стартового CRC. */
+uint8_t EEPROM_TestBusy(void) { return eeprom_check_running; }

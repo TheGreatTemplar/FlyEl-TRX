@@ -1,4 +1,5 @@
 #include "input.h"
+#include "stm32f10x.h"
 #include "board_pins.h"
 
 /* CD4017: physical pins Q1..Q9 = 2,4,7,10,1,5,6,9,11.
