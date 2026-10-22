@@ -1,0 +1,38 @@
+# Local Keil products, debugger configuration and generated RTE files.
+/Objects/
+/Listings/
+/DebugConfig/
+/RTE/
+/build/
+*.uvguix.*
+*.uvoptx
+*.dep
+*.bak
+*.o
+*.axf
+*.hex
+*.map
+*.lnp
+*.htm
+
+# Historical downloads and unrelated reference projects stay on this PC.
+/old/
+/dist/
+/lib/
+/ds/
+*.zip
+*.rar
+*.exe
+/doc/*
+!/doc/KeyBoard_941.jpg
+!/doc/TRX_Fly_STM32F103C8T6_pinout_final.xlsx
+
+# Per-machine tools and credentials must never be committed.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+__pycache__/
+.DS_Store
+Thumbs.db

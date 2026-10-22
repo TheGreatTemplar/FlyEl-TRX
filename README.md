@@ -21,7 +21,9 @@ The design is evolving; specifications and interfaces may change after prototype
 
 | Directory | Purpose |
 | --- | --- |
-| `firmware/` | MCU firmware, build and flashing instructions |
+| `src/`, `font/` | MCU source modules and bitmap fonts |
+| `firmware/` | Build, flashing, architecture and pinout documentation |
+| `scripts/`, `tests/` | Portable build and logic checks |
 | `hardware/` | Schematics, PCBs, assembly and BOM |
 | `documentation/` | Architecture, user and service documentation |
 | `measurements/` | Bench measurements, calibration data and reports |
@@ -30,7 +32,9 @@ The design is evolving; specifications and interfaces may change after prototype
 
 ## Firmware
 
-The first firmware version will be imported during development. Refer to the files in `firmware/` for the actual target MCU, build environment and programming instructions once available.
+STM32F103C8T6 firmware is available in `src/`, with font assets in `font/`. Open the root `gmg12864_v01.uvprojx` in Keil MDK, or use `scripts/build.ps1`. See [build and multi-computer instructions](firmware/README.md), [module map](firmware/ARCHITECTURE.md), and [pinout](firmware/PINOUT.md).
+
+The display, CD4017 keyboard with interrupt-driven wake, TS tuning-step control, Si5351 and non-destructive EEPROM CRC check are implemented. RX/TX switching, RIT/SPLIT, persistent settings and filter shift-register control are still under development.
 
 ## License
 
@@ -42,7 +46,7 @@ This repository uses the **MIT License**. See [LICENSE](LICENSE). Third-party ma
 
 **FLyEl-TRX — модульный любительский трансивер, аппаратная часть и программное обеспечение.**
 
-Проект находится в разработке. Здесь будут размещаться прошивка, электрические схемы и печатные платы, результаты измерений, конструкторская документация и технологическая оснастка для изготовления и подбора компонентов.
+Проект находится в разработке. Прошивка STM32F103C8T6 уже размещена в `src/`, проект Keil — в корне. [Сборка и работа с двух компьютеров](firmware/README.md), [карта модулей](firmware/ARCHITECTURE.md), [распиновка](firmware/PINOUT.md). Аппаратные материалы добавляются по мере готовности.
 
 Основные направления: синтезатор на Si5351, основная ПЧ 11,0592 МГц (альтернативная — 8,192 МГц), модульный ВЧ-тракт, сервисные калибровки, клавиатура и энкодеры передней панели. Реализация модулей и характеристики уточняются по мере испытаний.
 

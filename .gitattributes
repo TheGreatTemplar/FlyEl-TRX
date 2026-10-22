@@ -1,0 +1,10 @@
+* text=auto
+*.c text eol=lf
+*.h text eol=lf
+*.ps1 text eol=lf
+*.md text eol=lf
+*.uvprojx text eol=lf
+*.sct text eol=lf
+*.jpg binary
+*.xlsx binary
+*.RHF binary
