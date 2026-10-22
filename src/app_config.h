@@ -8,7 +8,7 @@
 #define MAIN_FREQ_USE_SW2019        1U
 #define ADC_VREF_MV                 3300U
 
-#define FREQ_INPUT_MAX_LEN          11U
+#define FREQ_INPUT_MAX_LEN          7U
 #define MENU_ITEMS                  5U
 
 /* До уточнения раскладки: каналы 1..100, три условных фильтра на каждый режим. */

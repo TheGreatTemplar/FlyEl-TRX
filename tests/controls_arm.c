@@ -250,3 +250,26 @@ int test_explicit_gen_and_channel_numbers_remain_in_range(void)
     MemoryControl_Move(-2147483647 - 1); CHECK(MemoryControl_Channel() < MEMORY_CHANNEL_COUNT);
     return 0;
 }
+
+int test_input_digit_limit_by_band_and_channel(void)
+{
+    uint8_t band, i;
+    char text[10];
+    InitControls();
+    for (band = 0U; band < Radio_BandsCount(); band++)
+    {
+        uint8_t expected = (bands[band].max_hz >= 10000000U) ? 7U : 6U;
+        Radio_SetBand(band); Entry_Cancel(); Tap(Key_5_3, 100U);
+        for (i = 0U; i < 12U; i++) Tap(Key_1_1, 100U);
+        CHECK(menu.freq_input_len == expected);
+        FreqEntry_Format(text);
+        CHECK(text[expected - 5U] == '.' && text[expected - 1U] == '.');
+        CHECK(text[expected + 2U] == '\0');
+        CHECK(FreqEntry_Append('.') == 0U && menu.freq_input_len == expected);
+    }
+    Entry_Cancel(); Tap(Key_9_1, 100U); Tap(Key_5_3, 100U);
+    for (i = 0U; i < 5U; i++) Tap(Key_1_1, 100U);
+    CHECK(menu.freq_input_len == 3U);
+    FreqEntry_Format(text); CHECK(strcmp(text, "111") == 0);
+    return 0;
+}

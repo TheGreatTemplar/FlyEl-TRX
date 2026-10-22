@@ -13,16 +13,20 @@
 #include "ui_status.h"
 #include "ui_settings.h"
 #include "text_utils.h"
+#include "freq_entry.h"
 
 /* Одинаковый шрифт и плоский фон по фактической ширине SET: и введённых символов. */
 static void DrawFrequencyEntry(void)
 {
     char text[FREQ_INPUT_MAX_LEN + 8U];
+    char value[FREQ_INPUT_MAX_LEN + 3U];
     uint8_t width;
-    uint8_t x = 36U;
+    uint8_t anchor = FrequencyUI_MainLeftX(menu.rf_hz);
+    uint8_t x = (anchor >= 2U) ? (uint8_t)(anchor - 2U) : 0U;
     text[0] = '\0';
     Text_Append(text, (Entry_ChannelTarget() != 0U) ? "CH: " : "SET: ");
-    Text_Append(text, (menu.freq_input_len != 0U) ? menu.freq_input : "_");
+    FreqEntry_Format(value);
+    Text_Append(text, value);
     width = (uint8_t)(LCD_GetText5x7Width(text, 1U) + 4U);
     if ((uint16_t)x + width > LCD_WIDTH) x = (uint8_t)(LCD_WIDTH - width);
     LCD_FillRectangle(x, 33U, (uint8_t)(width - 1U), 10U, PX_ON);

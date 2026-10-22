@@ -1,83 +1,59 @@
-/* Ручной ввод частоты с цифровых логических клавиш. */
+/* Цифровой ввод с фиксированными позициями МГц/кГц/десятков герц. */
 #include "freq_entry.h"
 #include "app_state.h"
 #include "radio_control.h"
 #include "frequency_parse.h"
 
-/* Проверяет, относится ли логическая клавиша к ручному вводу частоты. */
-uint8_t FreqEntry_IsCharacterKey(input_key_t key)
-{
-    if (Input_KeyToChar(key) != '\0')
-    {
-        return 1U;
-    }
+static uint8_t mhz_digits;
+static uint8_t digit_limit;
+static uint8_t channel_input;
 
-    return 0U;
-}
-
-/* Открывает ручной ввод; необязательный первый символ сразу добавляется в буфер. */
-void FreqEntry_Start(char ch)
+void FreqEntry_Start(uint8_t channel_mode)
 {
+    const band_t *band = &bands[menu.band_index];
+    uint32_t reference = menu.rf_hz;
+    channel_input = channel_mode;
     menu.freq_input_active = 1U;
     menu.freq_input_len = 0U;
     menu.freq_input_dot = 0U;
     menu.freq_input[0] = '\0';
-
-    if (ch != '\0')
+    if (reference >= band->min_hz && reference <= band->max_hz) reference = band->max_hz;
+    mhz_digits = (reference >= 10000000UL) ? 2U : 1U;
+    digit_limit = (uint8_t)(mhz_digits + 5U);
+    if (channel_input != 0U)
     {
-        if (ch == '.')
-        {
-            menu.freq_input_dot = 1U;
-        }
-
-        menu.freq_input[0] = ch;
-        menu.freq_input[1] = '\0';
-        menu.freq_input_len = 1U;
+        uint32_t count = MEMORY_CHANNEL_COUNT;
+        digit_limit = 1U;
+        while (count >= 10U) { count /= 10U; digit_limit++; }
     }
-
     menu.need_redraw = 1U;
 }
 
-/* Добавляет символ, соблюдая размер буфера и запрет второй точки. */
-void FreqEntry_Append(char ch)
+/* Точки не занимают буфер: они рисуются автоматически. Лишние цифры игнорируются. */
+uint8_t FreqEntry_Append(char ch)
 {
-    if (menu.freq_input_len >= FREQ_INPUT_MAX_LEN)
-    {
-        return;
-    }
-
-    if (ch == '.')
-    {
-        if (menu.freq_input_dot != 0U)
-        {
-            return;
-        }
-
-        menu.freq_input_dot = 1U;
-    }
-
-    menu.freq_input[menu.freq_input_len] = ch;
-    menu.freq_input_len++;
+    if (ch < '0' || ch > '9' || menu.freq_input_len >= digit_limit) return 0U;
+    menu.freq_input[menu.freq_input_len++] = ch;
     menu.freq_input[menu.freq_input_len] = '\0';
-
     menu.need_redraw = 1U;
+    return 1U;
 }
 
-/* Применяет введённую частоту в пределах диапазона и закрывает ввод. */
-void FreqEntry_Apply(void)
+void FreqEntry_Format(char *text)
 {
-    uint32_t hz;
-
-    if (Frequency_Parse(menu.freq_input, &hz) != 0U)
-    {
-        Radio_SetFrequency(hz);
-    }
-
-    menu.freq_input_active = 0U;
-    menu.need_redraw = 1U;
+    uint8_t i;
+    if (channel_input == 0U)
+    { Frequency_FormatDigits(menu.freq_input, mhz_digits, text); return; }
+    for (i = 0U; i < menu.freq_input_len; i++) text[i] = menu.freq_input[i];
+    if (i == 0U) text[i++] = '_';
+    text[i] = '\0';
 }
 
-/* Закрывает ввод, оставляя прежнюю частоту. */
+uint8_t FreqEntry_Parse(uint32_t *hz)
+{
+    return Frequency_ParseDigits(menu.freq_input, mhz_digits, hz);
+}
+
 void FreqEntry_Cancel(void)
 {
     menu.freq_input_active = 0U;

@@ -82,7 +82,23 @@ int test_display_input_background_is_flat_and_fits_maximum_length(void)
         { if (first == 128U) first = x; last = x; }
     }
     CHECK(first >= 34U && first < last && last < 128U);
-    CHECK((uint8_t)(last - first + 1U) > short_width);
+    CHECK((uint8_t)(last - first + 1U) == short_width);
+    CHECK((uint8_t)(first + 2U) == FrequencyUI_MainLeftX(menu.rf_hz));
     for (x = first; x <= last; x++) CHECK(Pixel(x, 33U) != 0U);
+    return 0;
+}
+
+int test_display_set_aligns_with_main_frequency_on_every_band(void)
+{
+    uint8_t band, x, first;
+    InitControls(); test_eeprom_message = "";
+    for (band = 0U; band < Radio_BandsCount(); band++)
+    {
+        Radio_SetBand(band); Entry_Cancel(); Tap(Key_5_3, 100U); Screens_Redraw();
+        first = 128U;
+        for (x = 34U; x < 128U; x++)
+            if (Pixel(x, 33U) != 0U) { first = x; break; }
+        CHECK((uint8_t)(first + 2U) == FrequencyUI_MainLeftX(menu.rf_hz));
+    }
     return 0;
 }

@@ -42,7 +42,7 @@ static void Confirm(void)
     }
     else
     {
-        if (Frequency_Parse(menu.freq_input, &hz) == 0U) { error = 1U; return; }
+        if (FreqEntry_Parse(&hz) == 0U) { error = 1U; return; }
         MemoryControl_LeaveMode();
         Radio_SetFrequency(hz);
     }
@@ -60,7 +60,7 @@ uint8_t Entry_HandleKey(input_key_t key)
         {
             active = 1U; error = 0U;
             channel_target = MemoryControl_Selecting();
-            FreqEntry_Start('\0');
+            FreqEntry_Start(channel_target);
         }
         menu.need_redraw = 1U;
         return 1U;
@@ -69,10 +69,9 @@ uint8_t Entry_HandleKey(input_key_t key)
     ch = KeyLayout_Character(key);
     if (ch != '\0')
     {
-        activity_tick = App_GetTick500us();
         if (channel_target != 0U && ch == '.') { error = 1U; return 1U; }
-        FreqEntry_Append(ch);
-        error = 0U;
+        if (FreqEntry_Append(ch) != 0U)
+        { activity_tick = App_GetTick500us(); error = 0U; }
         return 1U;
     }
     /* Нечисловая команда использует FUNC однократно; набранные цифры защищаем от неё. */
