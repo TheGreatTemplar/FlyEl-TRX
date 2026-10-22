@@ -47,3 +47,42 @@ int test_display_snapshots(void)
     CHECK(display_count == 6U);
     return 0;
 }
+
+static uint8_t Pixel(uint8_t x, uint8_t y)
+{
+    return (uint8_t)((lcd_buffer[(uint16_t)(y / 8U) * 128U + x] >> (y % 8U)) & 1U);
+}
+
+int test_display_exact_two_pixel_frequency_gap(void)
+{
+    uint8_t x, main_pixels = 0U, second_pixels = 0U;
+    InitControls(); test_eeprom_message = ""; Screens_Redraw();
+    for (x = 45U; x < 128U; x++)
+    {
+        CHECK(Pixel(x, 29U) == 0U && Pixel(x, 30U) == 0U);
+        main_pixels |= Pixel(x, 28U);
+        second_pixels |= Pixel(x, 31U);
+    }
+    CHECK(main_pixels != 0U && second_pixels != 0U);
+    return 0;
+}
+
+int test_display_input_background_is_flat_and_fits_maximum_length(void)
+{
+    uint8_t x, first = 128U, last = 0U, short_width = 0U;
+    const char *digits = "12345678901";
+    InitControls(); test_eeprom_message = ""; Tap(Key_5_3, 100U); Screens_Redraw();
+    for (x = 34U; x < 128U; x++) short_width = (uint8_t)(short_width + Pixel(x, 33U));
+    while (*digits != '\0') FreqEntry_Append(*digits++);
+    Screens_Redraw();
+    for (x = 34U; x < 128U; x++)
+    {
+        CHECK(Pixel(x, 33U) == Pixel(x, 43U));
+        if (Pixel(x, 33U) != 0U)
+        { if (first == 128U) first = x; last = x; }
+    }
+    CHECK(first >= 34U && first < last && last < 128U);
+    CHECK((uint8_t)(last - first + 1U) > short_width);
+    for (x = first; x <= last; x++) CHECK(Pixel(x, 33U) != 0U);
+    return 0;
+}

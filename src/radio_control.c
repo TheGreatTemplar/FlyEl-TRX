@@ -168,10 +168,17 @@ void Radio_SetFrequency(uint32_t hz)
 void Radio_TuneSteps(int32_t steps)
 {
     int64_t hz;
+    uint32_t min_hz = RADIO_MIN_HZ;
+    uint32_t max_hz = RADIO_MAX_HZ;
+    const band_t *band = &bands[menu.band_index];
     if (steps == 0) return;
+    /* Общие пределы нужны только GEN, введённому явно. В выбранном КВ-диапазоне
+     * энкодер упирается в края и не переключает диапазон через Radio_SetFrequency. */
+    if (menu.rf_hz >= band->min_hz && menu.rf_hz <= band->max_hz)
+    { min_hz = band->min_hz; max_hz = band->max_hz; }
     hz = (int64_t)menu.rf_hz + (int64_t)steps * steps_hz[menu.step_index];
-    if (hz < (int64_t)RADIO_MIN_HZ) hz = RADIO_MIN_HZ;
-    if (hz > (int64_t)RADIO_MAX_HZ) hz = RADIO_MAX_HZ;
+    if (hz < (int64_t)min_hz) hz = min_hz;
+    if (hz > (int64_t)max_hz) hz = max_hz;
     Radio_SetFrequency((uint32_t)hz);
 }
 

@@ -211,3 +211,42 @@ int test_controls_filter_memory_func_cancel_and_engineering_direction(void)
     Tap(Key_9_3, 100U); Settings_Encoder(-1); CHECK(menu.if_index == 2U);
     return 0;
 }
+
+int test_encoder_stops_at_each_band_edge_for_every_step(void)
+{
+    uint8_t band, step;
+    InitControls();
+    for (band = 0U; band < Radio_BandsCount(); band++)
+    {
+        for (step = 0U; step < 6U; step++)
+        {
+            Radio_SetBand(band); menu.step_index = step;
+            menu.rf_hz = bands[band].min_hz;
+            Radio_TuneSteps(-1); CHECK(menu.rf_hz == bands[band].min_hz && menu.band_index == band);
+            Radio_TuneSteps(-2147483647 - 1); CHECK(menu.rf_hz == bands[band].min_hz);
+            menu.rf_hz = bands[band].max_hz;
+            Radio_TuneSteps(1); CHECK(menu.rf_hz == bands[band].max_hz && menu.band_index == band);
+            Radio_TuneSteps(2147483647); CHECK(menu.rf_hz == bands[band].max_hz);
+            menu.rf_hz = bands[band].min_hz + 1U;
+            Radio_TuneSteps(-10); CHECK(menu.rf_hz == bands[band].min_hz);
+            menu.rf_hz = bands[band].max_hz - 1U;
+            Radio_TuneSteps(10); CHECK(menu.rf_hz == bands[band].max_hz);
+        }
+    }
+    return 0;
+}
+
+int test_explicit_gen_and_channel_numbers_remain_in_range(void)
+{
+    InitControls(); Radio_SetFrequency(21469780U); Radio_TuneSteps(1);
+    CHECK(menu.rf_hz == 21469880U);
+    Radio_SetFrequency(RADIO_MAX_HZ); Radio_TuneSteps(2147483647);
+    CHECK(menu.rf_hz == RADIO_MAX_HZ);
+    Radio_SetFrequency(RADIO_MIN_HZ); Radio_TuneSteps(-2147483647 - 1);
+    CHECK(menu.rf_hz == RADIO_MIN_HZ);
+    MemoryControl_Move(-1); CHECK(MemoryControl_Channel() == 99U);
+    MemoryControl_Move(1); CHECK(MemoryControl_Channel() == 0U);
+    MemoryControl_Move(2147483647); CHECK(MemoryControl_Channel() < MEMORY_CHANNEL_COUNT);
+    MemoryControl_Move(-2147483647 - 1); CHECK(MemoryControl_Channel() < MEMORY_CHANNEL_COUNT);
+    return 0;
+}

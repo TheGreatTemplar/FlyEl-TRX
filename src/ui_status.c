@@ -29,7 +29,9 @@ void StatusUI_Draw(void)
     uint8_t show_channel = (uint8_t)(MemoryControl_Mode() != 0U || MemoryControl_Selecting() != 0U);
     if (Entry_Active() != 0U)
     {
-        LCD_Print5x7(36U, 32U, Entry_Status(), 1U, CH_UNINVERT);
+        /* FUNC уже виден сверху, здесь нужна только ошибка ввода. */
+        if (Entry_Status()[0] == 'I')
+            LCD_Print5x7(36U, 44U, Entry_Status(), 1U, CH_UNINVERT);
         return;
     }
     if (show_channel != 0U)
@@ -52,5 +54,5 @@ void StatusUI_Draw(void)
     }
     Text_Append(text, " F");
     Text_U32ToDec(number, (uint32_t)RadioVfo_Filter() + 1U, 1U); Text_Append(text, number);
-    LCD_Print5x7(36U, 32U, text, 1U, CH_UNINVERT);
+    LCD_Print5x7(36U, 44U, text, 1U, CH_UNINVERT);
 }
