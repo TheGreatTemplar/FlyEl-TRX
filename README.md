@@ -26,6 +26,7 @@ The design is evolving; specifications and interfaces may change after prototype
 | `documentation/` | Architecture, user and service documentation |
 | `measurements/` | Bench measurements, calibration data and reports |
 | `mechanical/` | Enclosure and mechanical designs, 3D models |
+| [`tooling/`](tooling/) | Custom measurement fixtures, component-matching and assembly tooling |
 
 ## Firmware
 
@@ -41,7 +42,7 @@ This repository uses the **MIT License**. See [LICENSE](LICENSE). Third-party ma
 
 **FLyEl-TRX — модульный любительский трансивер, аппаратная часть и программное обеспечение.**
 
-Проект находится в разработке. Здесь будут размещаться прошивка, электрические схемы и печатные платы, результаты измерений и конструкторская документация.
+Проект находится в разработке. Здесь будут размещаться прошивка, электрические схемы и печатные платы, результаты измерений, конструкторская документация и технологическая оснастка для изготовления и подбора компонентов.
 
 Основные направления: синтезатор на Si5351, основная ПЧ 11,0592 МГц (альтернативная — 8,192 МГц), модульный ВЧ-тракт, сервисные калибровки, клавиатура и энкодеры передней панели. Реализация модулей и характеристики уточняются по мере испытаний.
 
