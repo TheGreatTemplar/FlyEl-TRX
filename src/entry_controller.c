@@ -55,7 +55,13 @@ uint8_t Entry_HandleKey(input_key_t key)
     if (key == Key_5_3)
     {
         activity_tick = App_GetTick500us();
-        if (active != 0U) Confirm();
+        if (active != 0U)
+        {
+            /* После ошибки FUNC начинает чистый ввод, сохраняя цель: частота/канал. */
+            if (error != 0U)
+            { error = 0U; FreqEntry_Start(channel_target); }
+            else Confirm();
+        }
         else
         {
             active = 1U; error = 0U;

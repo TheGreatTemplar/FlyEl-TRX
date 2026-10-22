@@ -273,3 +273,36 @@ int test_input_digit_limit_by_band_and_channel(void)
     FreqEntry_Format(text); CHECK(strcmp(text, "111") == 0);
     return 0;
 }
+
+int test_func_restarts_frequency_after_error_without_waiting(void)
+{
+    uint8_t i;
+    InitControls(); Tap(Key_5_3, 100U);
+    for (i = 0U; i < 7U; i++) Tap(Key_4_3, 100U); /* 99.999.99 вне пределов. */
+    Tap(Key_5_3, 100U);
+    CHECK(strcmp(Entry_Status(), "INPUT ERR") == 0 && menu.rf_hz == 28200000U);
+    now_tick += FUNC_TIMEOUT_TICKS - 200U; Entry_Task();
+    CHECK(Entry_Active() != 0U);
+    Tap(Key_5_3, 100U);
+    CHECK(Entry_Active() != 0U && menu.freq_input_len == 0U && menu.freq_input[0] == '\0');
+    CHECK(strcmp(Entry_Status(), "FUNC") == 0 && Entry_ChannelTarget() == 0U);
+    now_tick += 500U; Entry_Task(); CHECK(Entry_Active() != 0U); /* Новый таймер. */
+    Tap(Key_1_2, 100U); Tap(Key_1_1, 100U); Tap(Key_2_1, 100U);
+    Tap(Key_2_3, 100U); Tap(Key_4_3, 100U); Tap(Key_4_1, 100U); Tap(Key_4_2, 100U);
+    Tap(Key_5_3, 100U);
+    CHECK(Entry_Active() == 0U && menu.rf_hz == 21469780U);
+    return 0;
+}
+
+int test_func_restarts_channel_after_error_and_preserves_target(void)
+{
+    InitControls(); Tap(Key_9_1, 100U); Tap(Key_5_3, 100U);
+    Tap(Key_1_1, 100U); Tap(Key_1_1, 100U); Tap(Key_1_1, 100U); Tap(Key_5_3, 100U);
+    CHECK(strcmp(Entry_Status(), "INPUT ERR") == 0 && MemoryControl_Channel() == 0U);
+    Tap(Key_5_3, 100U);
+    CHECK(Entry_ChannelTarget() != 0U && menu.freq_input_len == 0U && Entry_Active() != 0U);
+    CHECK(strcmp(Entry_Status(), "FUNC") == 0);
+    Tap(Key_1_1, 100U); Tap(Key_5_2, 100U); Tap(Key_5_2, 100U); Tap(Key_5_3, 100U);
+    CHECK(Entry_Active() == 0U && MemoryControl_Channel() == 99U && menu.rf_hz == 28200000U);
+    return 0;
+}
