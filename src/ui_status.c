@@ -26,6 +26,7 @@ void StatusUI_Draw(void)
 {
     char text[24] = "";
     char number[5];
+    uint8_t text_x = 36U;
     uint8_t show_channel = (uint8_t)(MemoryControl_Mode() != 0U || MemoryControl_Selecting() != 0U);
     if (Entry_Active() != 0U)
     {
@@ -36,10 +37,12 @@ void StatusUI_Draw(void)
     }
     if (show_channel != 0U)
     {
-        /* Мигает только надпись MEMO, номер остаётся читаемым. */
-        Text_Append(text, (MemoryControl_Selecting() == 0U ||
-                     (App_GetTick500us() / 1000U) % 2U == 0U) ? "MEMO" : "    ");
-        Text_U32ToDec(number, (uint32_t)MemoryControl_Channel() + 1U, 3U);
+        /* Шрифт пропорциональный: пробелы уже букв MEMO. Номер рисуем отдельно,
+         * с постоянной координатой, чтобы мигание не сдвигало остаток строки. */
+        if (MemoryControl_Selecting() == 0U || (App_GetTick500us() / 1000U) % 2U == 0U)
+            LCD_Print5x7(text_x, 44U, "MEMO", 1U, CH_UNINVERT);
+        text_x = (uint8_t)(text_x + LCD_GetText5x7Width("MEMO", 1U) + 1U);
+        Text_U32ToDec(number, (uint32_t)MemoryControl_Channel() + 1U, 2U);
         Text_Append(text, number); Text_Append(text, " ");
         if (MemoryStore_Ready() == 0U) Text_Append(text, "WAIT");
         else if (MemoryControl_Blank() != 0U) Text_Append(text, "BLANK");
@@ -53,5 +56,5 @@ void StatusUI_Draw(void)
     }
     Text_Append(text, " F");
     Text_U32ToDec(number, (uint32_t)RadioVfo_Filter() + 1U, 1U); Text_Append(text, number);
-    LCD_Print5x7(36U, 44U, text, 1U, CH_UNINVERT);
+    LCD_Print5x7(text_x, 44U, text, 1U, CH_UNINVERT);
 }
