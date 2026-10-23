@@ -24,7 +24,7 @@ The design is evolving; specifications and interfaces may change after prototype
 | `src/`, `font/` | MCU source modules and bitmap fonts |
 | `firmware/` | Build, flashing, architecture and pinout documentation |
 | `scripts/`, `tests/` | Portable build and logic checks |
-| `hardware/` | Schematics, PCBs, assembly and BOM |
+| [`hardware/`](hardware/) | Schematics, PCBs, assembly and BOM; [relay and I/O map](hardware/CONTROL_MAP.md) |
 | `documentation/` | Architecture, user and service documentation |
 | `measurements/` | Bench measurements, calibration data and reports |
 | `mechanical/` | Enclosure and mechanical designs, 3D models |
