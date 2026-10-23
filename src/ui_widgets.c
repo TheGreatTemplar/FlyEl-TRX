@@ -1,6 +1,7 @@
 /* Рамки, подписи и строки меню. */
 #include "ui_widgets.h"
 #include "app_state.h"
+#include "radio_panel.h"
 #include "text_utils.h"
 #include "gmg12864.h"
 
@@ -116,10 +117,10 @@ static void FormatGainLabel(char *buf)
     gain_db = menu.gain_db;
     buf[0] = '\0';
 
-    /* PREAMP and ATT are both OFF. */
+    /* При одновременном включении в общей рамке показываем ослабление ATT. */
     if (gain_db == 0)
     {
-        Text_Append(buf, "ATT");
+        Text_Append(buf, (panel.preamp != 0U) ? "P.AMP" : "OFF");
         return;
     }
 
@@ -142,37 +143,7 @@ static void FormatGainLabel(char *buf)
 void Widgets_Gain(uint8_t x, uint8_t y)
 {
     char text[12];
-    uint8_t text_width;
-    uint8_t box_width;
-    uint8_t text_x;
-    const uint8_t box_height = 11U;
 
     FormatGainLabel(text);
-
-    text_width = LCD_GetText5x7Width(text, 1U);
-    box_width = (uint8_t)(text_width + 4U);
-    text_x = (uint8_t)(x + 2U);
-
-    if (menu.gain_db != 0)
-    {
-        /* PREAMP +20 dB or active attenuator: inverted badge. */
-        LCD_FillRectangle(x, y, (uint8_t)(box_width - 1U),
-                          (uint8_t)(box_height - 1U), PX_ON);
-        ClearBoxCorners(x, y, box_width, box_height);
-        LCD_Print5x7(text_x, (uint8_t)(y + 2U), text, 1U, CH_INVERT);
-
-        /* Keep the one-pixel blank gap outside the badge. */
-        LCD_DrawLine((uint8_t)(x + box_width), y,
-                     (uint8_t)(x + box_width),
-                     (uint8_t)(y + box_height - 1U), PX_OFF);
-        LCD_DrawLine(x, (uint8_t)(y + box_height),
-                     (uint8_t)(x + box_width - 1U),
-                     (uint8_t)(y + box_height), PX_OFF);
-    }
-    else
-    {
-        /* PREAMP and ATT are OFF: plain ATT in a non-inverted frame. */
-        LCD_Print5x7(text_x, (uint8_t)(y + 2U), text, 1U, CH_UNINVERT);
-        DrawFrameNoCorners(x, y, box_width, box_height);
-    }
+    (void)Widgets_Label(x, y, text, (uint8_t)(menu.gain_db != 0 || panel.preamp != 0U));
 }

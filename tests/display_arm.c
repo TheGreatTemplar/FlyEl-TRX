@@ -15,7 +15,7 @@ void LCD_TestUpdate(void);
 #include "ui_screens.c"
 #undef LCD_Update
 
-uint8_t display_snapshots[6][1024];
+uint8_t display_snapshots[7][1024];
 uint32_t display_count;
 static const char *test_eeprom_message;
 
@@ -24,7 +24,7 @@ const char *MemoryStore_Status(void) { return ""; }
 const char *EEPROM_TestStatus(void) { return test_eeprom_message; }
 void LCD_TestUpdate(void)
 {
-    if (display_count < 6U) memcpy(display_snapshots[display_count++], lcd_buffer, 1024U);
+    if (display_count < 7U) memcpy(display_snapshots[display_count++], lcd_buffer, 1024U);
 }
 
 int test_display_snapshots(void)
@@ -44,7 +44,8 @@ int test_display_snapshots(void)
     Screens_Redraw();
     Tap(Key_6_3, 2001U); Screens_Redraw();
     InitControls(); test_eeprom_message = "CRC:FF00"; Screens_Redraw();
-    CHECK(display_count == 6U);
+    InitControls(); test_eeprom_message = ""; Tap(Key_7_1, 100U); Screens_Redraw();
+    CHECK(display_count == 7U);
     return 0;
 }
 

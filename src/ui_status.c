@@ -46,7 +46,6 @@ void StatusUI_Draw(void)
     }
     if (show_channel == 0U)
     {
-        if (panel.preamp != 0U) Text_Append(text, "P");
         if (panel.nb != 0U) Text_Append(text, "N");
         if (panel.comp != 0U) Text_Append(text, "C");
         if (panel.vox != 0U && RadioMode_IsSSB(RadioVfo_Mode()) != 0U) Text_Append(text, "V");

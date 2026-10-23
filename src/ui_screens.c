@@ -148,26 +148,17 @@ static void DrawMainScreen(void)
      * между ними две пустые строки 29/30. Скрываем весь VFO при вводе. */
     if (menu.freq_input_active == 0U)
     {
-        const char *label_left = "VFO";
-        const char *label_right = (RadioVfo_Active() == 0U) ? "B" : "A";
+        const char *label = (RadioVfo_Active() == 0U) ? "VFOB" : "VFOA";
         uint8_t freq_x;
-        uint8_t label_right_x;
-        uint8_t label_left_x;
-        uint8_t vfo_width;
-        uint8_t b_width;
+        uint8_t label_x;
+        uint8_t label_width;
 
         freq_x = FrequencyUI_SecondLeftX(RadioVfo_OtherHz());
-        b_width = LCD_GetText5x7Width(label_right, 1U);
+        label_width = LCD_GetText5x7Width(label, 1U);
         /* The frequency digit has one empty leading column. */
-        label_right_x = (freq_x >= b_width) ? (uint8_t)(freq_x - b_width) : 0U;
-        vfo_width = LCD_GetText5x7Width(label_left, 1U);
-        /* Keep four blank columns between VFO and B. */
-        label_left_x = (label_right_x >= (uint8_t)(vfo_width + 4U))
-                     ? (uint8_t)(label_right_x - vfo_width - 4U)
-                     : 0U;
+        label_x = (freq_x >= label_width) ? (uint8_t)(freq_x - label_width) : 0U;
 
-        LCD_Print5x7(label_left_x, 33U, label_left, 1U, CH_UNINVERT);
-        LCD_Print5x7(label_right_x, 33U, label_right, 1U, CH_UNINVERT);
+        LCD_Print5x7(label_x, 33U, label, 1U, CH_UNINVERT);
         FrequencyUI_DrawSecond(RadioVfo_OtherHz(), 30U);
     }
 
