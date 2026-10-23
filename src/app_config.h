@@ -11,8 +11,8 @@
 #define FREQ_INPUT_MAX_LEN          7U
 #define MENU_ITEMS                  5U
 
-/* До уточнения раскладки: каналы 1..100, три условных фильтра на каждый режим. */
-#define MEMORY_CHANNEL_COUNT        100U
+/* Каналы 1..99, три условных фильтра на каждый режим. */
+#define MEMORY_CHANNEL_COUNT        99U
 #define MEMORY_EEPROM_BASE          0x4000U
 #define RADIO_FILTER_COUNT          3U
 #define SCAN_INTERVAL_TICKS         400U

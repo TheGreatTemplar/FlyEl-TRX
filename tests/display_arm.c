@@ -40,7 +40,7 @@ int test_display_snapshots(void)
     menu.last_key = Key_10_1;
     Screens_Redraw();
     InitControls(); test_eeprom_message = "";
-    MemoryControl_Select(99U); MemoryControl_ToggleSelection(); MemoryControl_ToggleMode();
+    MemoryControl_Select(98U); MemoryControl_ToggleSelection(); MemoryControl_ToggleMode();
     Screens_Redraw();
     Tap(Key_6_3, 2001U); Screens_Redraw();
     InitControls(); test_eeprom_message = "CRC:FF00"; Screens_Redraw();

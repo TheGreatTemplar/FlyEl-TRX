@@ -85,14 +85,15 @@ int test_memory_power_loss_keeps_old_copy(void)
     radio_preset_t preset = {7100000U, RADIO_LSB, 0U, 0U, 2U};
     radio_preset_t result;
     InitChip();
-    CHECK(MemoryStore_Request(99U, &preset) != 0U); Run(10U);
+    CHECK(MemoryStore_Request(99U, &preset) == 0U && writes == 0U);
+    CHECK(MemoryStore_Request(98U, &preset) != 0U); Run(10U);
     preset.hz = 7200000U;
     partial_write = 1U;
-    CHECK(MemoryStore_Request(99U, &preset) != 0U); Run(10U);
-    CHECK(MemoryStore_Get(99U, &result) != 0U && result.hz == 7100000U);
+    CHECK(MemoryStore_Request(98U, &preset) != 0U); Run(10U);
+    CHECK(MemoryStore_Get(98U, &result) != 0U && result.hz == 7100000U);
     MemoryStore_Init(); Run(205U);
-    CHECK(MemoryStore_Get(99U, &result) != 0U && result.hz == 7100000U);
-    CHECK(chip[MEMORY_EEPROM_BASE - 1U] == 0xFFU && chip[MEMORY_EEPROM_BASE + 12800U] == 0xFFU);
+    CHECK(MemoryStore_Get(98U, &result) != 0U && result.hz == 7100000U);
+    CHECK(chip[MEMORY_EEPROM_BASE - 1U] == 0xFFU && chip[MEMORY_EEPROM_BASE + 12672U] == 0xFFU);
     return 0;
 }
 

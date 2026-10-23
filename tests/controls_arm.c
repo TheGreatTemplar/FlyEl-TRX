@@ -139,8 +139,8 @@ int test_controls_memory_keys_require_strict_long_press(void)
 int test_controls_channel_entry_and_vfo_restore(void)
 {
     InitControls(); Tap(Key_9_1, 100U); Tap(Key_5_3, 100U);
-    Tap(Key_1_1, 100U); Tap(Key_5_2, 100U); Tap(Key_5_2, 100U); Tap(Key_5_3, 100U);
-    CHECK(MemoryControl_Channel() == 99U && MemoryControl_Selecting() != 0U);
+    Tap(Key_4_3, 100U); Tap(Key_4_3, 100U); Tap(Key_5_3, 100U);
+    CHECK(MemoryControl_Channel() == 98U && MemoryControl_Selecting() != 0U);
     Radio_SetFrequency(7100000U); Tap(Key_2_1, 2001U);
     Radio_SetFrequency(14200000U); Tap(Key_1_1, 100U);
     CHECK(MemoryControl_Mode() != 0U && menu.rf_hz == 7100000U);
@@ -156,7 +156,7 @@ int test_controls_up_down_and_scan_stop(void)
     Tap(Key_4_2, 100U); CHECK(Scan_Active() != 0U);
     now_tick += Scan_Interval(); Scan_Task(); CHECK(menu.rf_hz == 28200100U);
     Tap(Key_9_2, 100U); CHECK(Scan_Active() == 0U && menu.band_index == 8U);
-    Tap(Key_9_1, 100U); Tap(Key_9_2, 100U); CHECK(MemoryControl_Channel() == 99U);
+    Tap(Key_9_1, 100U); Tap(Key_9_2, 100U); CHECK(MemoryControl_Channel() == 98U);
     return 0;
 }
 
@@ -165,9 +165,12 @@ int test_controls_memory_scan_skips_blank(void)
     InitControls();
     cache_used[1] = 1U; cache[1] = (radio_preset_t){7100000U, RADIO_LSB, 0U, 0U, 2U};
     cache_used[7] = 1U; cache[7] = (radio_preset_t){14200000U, RADIO_USB, 1U, 0U, 4U};
+    cache_used[98] = 1U; cache[98] = (radio_preset_t){28200000U, RADIO_LSB, 0U, 0U, 8U};
     Tap(Key_1_1, 100U); Tap(Key_4_2, 100U);
     now_tick += Scan_Interval(); Scan_Task(); CHECK(MemoryControl_Channel() == 1U && menu.rf_hz == 7100000U);
     now_tick += Scan_Interval(); Scan_Task(); CHECK(MemoryControl_Channel() == 7U && menu.rf_hz == 14200000U);
+    now_tick += Scan_Interval(); Scan_Task(); CHECK(MemoryControl_Channel() == 98U && menu.rf_hz == 28200000U);
+    now_tick += Scan_Interval(); Scan_Task(); CHECK(MemoryControl_Channel() == 1U && menu.rf_hz == 7100000U);
     return 0;
 }
 
@@ -244,8 +247,9 @@ int test_explicit_gen_and_channel_numbers_remain_in_range(void)
     CHECK(menu.rf_hz == RADIO_MAX_HZ);
     Radio_SetFrequency(RADIO_MIN_HZ); Radio_TuneSteps(-2147483647 - 1);
     CHECK(menu.rf_hz == RADIO_MIN_HZ);
-    MemoryControl_Move(-1); CHECK(MemoryControl_Channel() == 99U);
+    MemoryControl_Move(-1); CHECK(MemoryControl_Channel() == 98U);
     MemoryControl_Move(1); CHECK(MemoryControl_Channel() == 0U);
+    MemoryControl_Select(99U); CHECK(MemoryControl_Channel() == 0U);
     MemoryControl_Move(2147483647); CHECK(MemoryControl_Channel() < MEMORY_CHANNEL_COUNT);
     MemoryControl_Move(-2147483647 - 1); CHECK(MemoryControl_Channel() < MEMORY_CHANNEL_COUNT);
     return 0;
@@ -269,8 +273,8 @@ int test_input_digit_limit_by_band_and_channel(void)
     }
     Entry_Cancel(); Tap(Key_9_1, 100U); Tap(Key_5_3, 100U);
     for (i = 0U; i < 5U; i++) Tap(Key_1_1, 100U);
-    CHECK(menu.freq_input_len == 3U);
-    FreqEntry_Format(text); CHECK(strcmp(text, "111") == 0);
+    CHECK(menu.freq_input_len == 2U);
+    FreqEntry_Format(text); CHECK(strcmp(text, "11") == 0);
     return 0;
 }
 
@@ -297,13 +301,13 @@ int test_func_restarts_frequency_after_error_without_waiting(void)
 int test_func_restarts_channel_after_error_and_preserves_target(void)
 {
     InitControls(); Tap(Key_9_1, 100U); Tap(Key_5_3, 100U);
-    Tap(Key_1_1, 100U); Tap(Key_1_1, 100U); Tap(Key_1_1, 100U); Tap(Key_5_3, 100U);
+    Tap(Key_5_2, 100U); Tap(Key_5_2, 100U); Tap(Key_5_3, 100U);
     CHECK(strcmp(Entry_Status(), "INPUT ERR") == 0 && MemoryControl_Channel() == 0U);
     Tap(Key_5_3, 100U);
     CHECK(Entry_ChannelTarget() != 0U && menu.freq_input_len == 0U && Entry_Active() != 0U);
     CHECK(strcmp(Entry_Status(), "FUNC") == 0);
-    Tap(Key_1_1, 100U); Tap(Key_5_2, 100U); Tap(Key_5_2, 100U); Tap(Key_5_3, 100U);
-    CHECK(Entry_Active() == 0U && MemoryControl_Channel() == 99U && menu.rf_hz == 28200000U);
+    Tap(Key_4_3, 100U); Tap(Key_4_3, 100U); Tap(Key_5_3, 100U);
+    CHECK(Entry_Active() == 0U && MemoryControl_Channel() == 98U && menu.rf_hz == 28200000U);
     return 0;
 }
 

@@ -37,7 +37,8 @@ int test_channel_number_bounds(void)
 {
     uint8_t channel;
     CHECK(Channel_Parse("001", &channel) != 0U && channel == 0U);
-    CHECK(Channel_Parse("100", &channel) != 0U && channel == 99U);
+    CHECK(Channel_Parse("99", &channel) != 0U && channel == 98U);
+    CHECK(Channel_Parse("100", &channel) == 0U);
     CHECK(Channel_Parse("0", &channel) == 0U);
     CHECK(Channel_Parse("101", &channel) == 0U);
     CHECK(Channel_Parse("1.0", &channel) == 0U);

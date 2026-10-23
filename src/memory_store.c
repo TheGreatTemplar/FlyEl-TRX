@@ -8,8 +8,8 @@
 #include "at24c256.h"
 #include <string.h>
 
-#if MEMORY_CHANNEL_COUNT > 100U || MEMORY_CHANNEL_COUNT < 1U
-#error MEMORY_CHANNEL_COUNT must be in 1..100
+#if MEMORY_CHANNEL_COUNT > 99U || MEMORY_CHANNEL_COUNT < 1U
+#error MEMORY_CHANNEL_COUNT must be in 1..99
 #endif
 #if MEMORY_EEPROM_BASE + MEMORY_CHANNEL_COUNT * 128U > 32768U
 #error Channel storage exceeds EEPROM
