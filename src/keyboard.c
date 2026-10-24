@@ -58,6 +58,11 @@ static void Execute(input_key_t key, key_gesture_event_t event)
         {
             if (MemoryControl_Selecting() != 0U)
             { MemoryControl_Move((key == Key_9_3) ? 1 : -1); break; }
+            /* Диапазон меняется один раз на нажатие: реле не получают автоповтор. */
+            if (event == KEY_GESTURE_REPEAT)
+            {
+                return;
+            }
             MemoryControl_LeaveMode();
             /* UP/DOWN перелистывают диапазоны с циклическим переходом. */
             uint8_t band = menu.band_index;

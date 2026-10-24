@@ -35,11 +35,11 @@ int test_key_arrow_repeat(void)
 {
     key_gesture_t key = {0};
     CHECK(KeyGesture_Update(&key, 1, 1, 1, 0) == KEY_GESTURE_SHORT);
-    CHECK(KeyGesture_Update(&key, 1, 0, 1, 999) == KEY_GESTURE_NONE);
-    CHECK(KeyGesture_Update(&key, 1, 0, 1, 1000) == KEY_GESTURE_REPEAT);
-    CHECK(KeyGesture_Update(&key, 1, 0, 1, 1299) == KEY_GESTURE_NONE);
-    CHECK(KeyGesture_Update(&key, 1, 0, 1, 1300) == KEY_GESTURE_REPEAT);
-    CHECK(KeyGesture_Update(&key, 0, 0, 1, 1400) == KEY_GESTURE_NONE);
+    CHECK(KeyGesture_Update(&key, 1, 0, 1, 1199) == KEY_GESTURE_NONE);
+    CHECK(KeyGesture_Update(&key, 1, 0, 1, 1200) == KEY_GESTURE_REPEAT);
+    CHECK(KeyGesture_Update(&key, 1, 0, 1, 1599) == KEY_GESTURE_NONE);
+    CHECK(KeyGesture_Update(&key, 1, 0, 1, 1600) == KEY_GESTURE_REPEAT);
+    CHECK(KeyGesture_Update(&key, 0, 0, 1, 2000) == KEY_GESTURE_NONE);
     return 0;
 }
 

@@ -160,6 +160,74 @@ int test_controls_up_down_and_scan_stop(void)
     return 0;
 }
 
+/* Длительное удержание обеих стрелок переключает диапазон только один раз. */
+int test_band_arrows_do_not_repeat_while_held(void)
+{
+    uint8_t direction;
+    uint32_t elapsed;
+
+    for (direction = 0U; direction < 2U; direction++)
+    {
+        input_key_t key = (direction == 0U) ? Key_9_3 : Key_9_2;
+        uint8_t expected_band = (direction == 0U) ? 0U : 7U;
+
+        InitControls();
+        key_down[key] = 1U;
+        Keyboard_Task(key);
+        CHECK(menu.band_index == expected_band);
+        for (elapsed = 0U; elapsed < 6000U; elapsed++)
+        {
+            now_tick++;
+            Keyboard_Task(INPUT_KEY_COUNT);
+            CHECK(menu.band_index == expected_band);
+        }
+        key_down[key] = 0U;
+        Keyboard_Task(INPUT_KEY_COUNT);
+        CHECK(menu.band_index == expected_band);
+        Tap(key, 100U);
+        CHECK(menu.band_index == ((direction == 0U) ? 1U : 6U));
+    }
+    return 0;
+}
+
+/* В CH обе стрелки срабатывают сразу, через 600 мс и далее через 200 мс. */
+int test_channel_arrows_repeat_at_600_and_200_ms(void)
+{
+    uint8_t direction;
+
+    for (direction = 0U; direction < 2U; direction++)
+    {
+        input_key_t key = (direction == 0U) ? Key_9_3 : Key_9_2;
+        uint32_t press_tick;
+
+        InitControls();
+        Tap(Key_9_1, 100U);
+        MemoryControl_Select(50U);
+        press_tick = now_tick;
+        key_down[key] = 1U;
+        Keyboard_Task(key);
+        CHECK(MemoryControl_Channel() == ((direction == 0U) ? 51U : 49U));
+        now_tick = press_tick + 1199U;
+        Keyboard_Task(INPUT_KEY_COUNT);
+        CHECK(MemoryControl_Channel() == ((direction == 0U) ? 51U : 49U));
+        now_tick++;
+        Keyboard_Task(INPUT_KEY_COUNT);
+        CHECK(MemoryControl_Channel() == ((direction == 0U) ? 52U : 48U));
+        now_tick = press_tick + 1599U;
+        Keyboard_Task(INPUT_KEY_COUNT);
+        CHECK(MemoryControl_Channel() == ((direction == 0U) ? 52U : 48U));
+        now_tick++;
+        Keyboard_Task(INPUT_KEY_COUNT);
+        CHECK(MemoryControl_Channel() == ((direction == 0U) ? 53U : 47U));
+        now_tick = press_tick + 2000U;
+        key_down[key] = 0U;
+        Keyboard_Task(INPUT_KEY_COUNT);
+        CHECK(MemoryControl_Channel() == ((direction == 0U) ? 53U : 47U));
+        CHECK(menu.band_index == 8U);
+    }
+    return 0;
+}
+
 int test_controls_memory_scan_skips_blank(void)
 {
     InitControls();
