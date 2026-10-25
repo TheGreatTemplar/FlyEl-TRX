@@ -56,11 +56,11 @@ uint8_t UARTStore_Busy(void)
 uint8_t UARTStore_Ready(void) { return uart_store_ready; }
 const char *UARTStore_Status(void) { return uart_store_message; }
 
-static uint8_t UartStoreFail(void)
+static uint8_t UartStoreFail(const char *reason)
 {
     if (UARTStore_Busy() != 0U) (void)UART1_ApplyConfig(&uart_previous);
     uart_store_state = (uart_store_ready != 0U) ? UART_IDLE : UART_ERROR;
-    uart_store_message = "EEPROM ERROR";
+    uart_store_message = reason;
     return 1U;
 }
 
@@ -76,17 +76,17 @@ uint8_t UARTStore_Task(void)
     {
         case UART_WAIT_CRC: uart_store_state = UART_FIND; break;
         case UART_FIND:
-            if (AT24C256_Find(&uart_store_address) != I2C2_SOFT_OK) return UartStoreFail();
+            if (AT24C256_Find(&uart_store_address) != I2C2_SOFT_OK) return UartStoreFail("EEPROM NOT FOUND");
             uart_store_state = UART_LOAD_A; break;
         case UART_LOAD_A: case UART_LOAD_B:
         {
             uint8_t slot = (uint8_t)(uart_store_state == UART_LOAD_B);
             if (AT24C256_Read(uart_store_address, (uint16_t)((uint16_t)slot * 64U), data, sizeof(data)) != I2C2_SOFT_OK)
-                return UartStoreFail();
+                return UartStoreFail("EEPROM READ FAIL");
             if (UartDecode(data, &config, &generation) != 0U &&
                 (uart_store_valid == 0U || MemoryRecord_Newer(generation, uart_generation) != 0U))
             {
-                if (UART1_ApplyConfig(&config) == 0U) return UartStoreFail();
+                if (UART1_ApplyConfig(&config) == 0U) return UartStoreFail("UART RESTORE FAIL");
                 uart_generation = generation; uart_store_slot = slot; uart_store_valid = 1U;
             }
             if (slot == 0U) uart_store_state = UART_LOAD_B;
@@ -100,19 +100,25 @@ uint8_t UARTStore_Task(void)
         }
         case UART_WRITE:
             if (AT24C256_WritePage(uart_store_address, (uint16_t)((uart_store_slot ^ 1U) * 64U),
-                                   uart_pending, sizeof(uart_pending)) != I2C2_SOFT_OK) return UartStoreFail();
-            uart_wait_tick = now; uart_poll_tick = now; uart_store_state = UART_WAIT_WRITE; break;
+                                   uart_pending, sizeof(uart_pending)) != I2C2_SOFT_OK)
+                return UartStoreFail("EEPROM WRITE FAIL");
+            /* Внутренняя запись начинается после STOP, а не перед передачей страницы. */
+            uart_wait_tick = App_GetTick500us(); uart_poll_tick = uart_wait_tick;
+            uart_store_state = UART_WAIT_WRITE; break;
         case UART_WAIT_WRITE:
-            if ((uint32_t)(now - uart_wait_tick) >= 40U) return UartStoreFail();
             if ((uint32_t)(now - uart_wait_tick) < 10U || (uint32_t)(now - uart_poll_tick) < 2U) break;
             uart_poll_tick = now; status = I2C2_Soft_Probe(uart_store_address);
+            /* Поздний проход основного цикла сам по себе не означает ошибку EEPROM:
+             * сначала проверяем ACK. Тайм-аут относится к продолжающемуся NACK. */
             if (status == I2C2_SOFT_OK) uart_store_state = UART_VERIFY;
-            else if (status != I2C2_SOFT_NACK) return UartStoreFail();
+            else if (status != I2C2_SOFT_NACK) return UartStoreFail("EEPROM BUS ERROR");
+            else if ((uint32_t)(now - uart_wait_tick) >= 40U) return UartStoreFail("EEPROM ACK TIMEOUT");
             break;
         case UART_VERIFY:
-            if (AT24C256_Read(uart_store_address, (uint16_t)((uart_store_slot ^ 1U) * 64U), data, sizeof(data)) != I2C2_SOFT_OK ||
-                memcmp(data, uart_pending, sizeof(data)) != 0 || UartDecode(data, &config, &generation) == 0U)
-                return UartStoreFail();
+            if (AT24C256_Read(uart_store_address, (uint16_t)((uart_store_slot ^ 1U) * 64U), data, sizeof(data)) != I2C2_SOFT_OK)
+                return UartStoreFail("EEPROM READ FAIL");
+            if (memcmp(data, uart_pending, sizeof(data)) != 0) return UartStoreFail("EEPROM VERIFY FAIL");
+            if (UartDecode(data, &config, &generation) == 0U) return UartStoreFail("EEPROM CRC FAIL");
             uart_generation = generation; uart_store_slot ^= 1U; uart_store_valid = 1U;
             uart_store_state = UART_IDLE; uart_store_message = "SAVED EEPROM"; return 1U;
         default: break;
@@ -124,7 +130,8 @@ uint8_t UARTStore_Request(const uart_config_t *config)
 {
     uint16_t crc;
     if (UARTConfig_Valid(config) == 0U) { uart_store_message = "INVALID UART"; return 0U; }
-    if (uart_store_ready == 0U) { uart_store_message = "EEPROM NOT READY"; return 0U; }
+    if (uart_store_ready == 0U)
+    { if (uart_store_state != UART_ERROR) uart_store_message = "EEPROM NOT READY"; return 0U; }
     if (uart_store_state != UART_IDLE || MemoryStore_Busy() != 0U || EEPROM_TestBusy() != 0U)
     { uart_store_message = "EEPROM BUSY"; return 0U; }
     uart_previous = *UART1_GetConfig();
