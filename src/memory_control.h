@@ -16,4 +16,6 @@ uint8_t MemoryControl_Mode(void);
 uint8_t MemoryControl_Selecting(void);
 uint8_t MemoryControl_Channel(void);
 uint8_t MemoryControl_Blank(void);
+/* Видимость номера: три подмигивания по 200 мс после подтверждённой записи MW. */
+uint8_t MemoryControl_NumberVisible(void);
 #endif

@@ -158,6 +158,47 @@ int test_display_permanent_channel_vfo_selection_memory_and_input(void)
     return 0;
 }
 
+int test_display_saved_channel_blinks_three_times_without_moving_screen(void)
+{
+    uint8_t baseline[1024], actual[1024];
+    uint8_t phase, x, y;
+    InitControls(); test_eeprom_message = "";
+    MemoryControl_Select(98U); Screens_Redraw();
+    memcpy(baseline, lcd_buffer, sizeof(baseline));
+    mock_saved_channel = 98U;
+    for (phase = 0U; phase <= 6U; phase++)
+    {
+        now_tick = (uint32_t)phase * 400U;
+        MemoryControl_Task();
+        CHECK(menu.need_redraw != 0U);
+        CHECK(MemoryControl_NumberVisible() == (uint8_t)(phase == 6U || (phase & 1U) != 0U));
+        Screens_Redraw(); memcpy(actual, lcd_buffer, sizeof(actual));
+        memcpy(lcd_buffer, baseline, sizeof(baseline));
+        if (phase < 6U && (phase & 1U) == 0U)
+            for (y = 42U; y < 51U; y++)
+                for (x = 111U; x < 128U; x++) LCD_DrawPixel(x, y, PX_OFF);
+        CHECK(memcmp(actual, lcd_buffer, sizeof(actual)) == 0);
+    }
+    menu.need_redraw = 0U; now_tick += 4000U; MemoryControl_Task();
+    CHECK(MemoryControl_NumberVisible() != 0U && menu.need_redraw == 0U);
+    return 0;
+}
+
+int test_save_blink_handles_tick_wrap_channel_change_and_repeat_save(void)
+{
+    InitControls();
+    now_tick = 0xFFFFFF00U; mock_saved_channel = 0U; MemoryControl_Task();
+    CHECK(MemoryControl_NumberVisible() == 0U);
+    MemoryControl_Select(1U); CHECK(MemoryControl_NumberVisible() != 0U);
+    MemoryControl_Select(0U); now_tick += 400U; MemoryControl_Task();
+    CHECK(MemoryControl_NumberVisible() != 0U);
+    now_tick += 400U; MemoryControl_Task(); CHECK(MemoryControl_NumberVisible() == 0U);
+    mock_saved_channel = 0U; MemoryControl_Task();
+    now_tick += 2000U; MemoryControl_Task(); CHECK(MemoryControl_NumberVisible() != 0U);
+    now_tick += 400U; MemoryControl_Task(); CHECK(MemoryControl_NumberVisible() != 0U);
+    return 0;
+}
+
 int test_display_band_vfo_and_filter_share_fixed_column(void)
 {
     uint8_t band;

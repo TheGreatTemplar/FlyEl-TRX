@@ -22,6 +22,7 @@ static uint8_t key_down[INPUT_KEY_COUNT];
 static uint32_t now_tick;
 static uint32_t synth_frequency;
 static uint32_t store_calls;
+static uint8_t mock_saved_channel;
 static uint8_t cache_used[MEMORY_CHANNEL_COUNT];
 static radio_preset_t cache[MEMORY_CHANNEL_COUNT];
 
@@ -32,7 +33,12 @@ const char *Input_KeyName(input_key_t key) { (void)key; return ""; }
 si5351_status_t Si5351_SetVfoHighSide(uint8_t clk, uint32_t hz, uint32_t if_hz)
 { (void)clk; (void)if_hz; synth_frequency = hz; return SI5351_OK; }
 
-void MemoryStore_Init(void) { memset(cache_used, 0, sizeof(cache_used)); store_calls = 0U; }
+void MemoryStore_Init(void) { memset(cache_used, 0, sizeof(cache_used)); store_calls = 0U; mock_saved_channel = 0xFFU; }
+uint8_t MemoryStore_TakeSavedChannel(uint8_t *channel)
+{
+    if (mock_saved_channel >= MEMORY_CHANNEL_COUNT) return 0U;
+    *channel = mock_saved_channel; mock_saved_channel = 0xFFU; return 1U;
+}
 uint8_t MemoryStore_Task(void) { return 0U; }
 uint8_t MemoryStore_Ready(void) { return 1U; }
 uint8_t MemoryStore_Busy(void) { return 0U; }

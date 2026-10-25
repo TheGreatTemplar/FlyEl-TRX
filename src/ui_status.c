@@ -31,8 +31,11 @@ void StatusUI_Draw(void)
     uint8_t show_channel = (uint8_t)(MemoryControl_Mode() != 0U || MemoryControl_Selecting() != 0U);
     /* Выбранный канал виден на рабочем экране всегда, включая VFO и прямой ввод. */
     Text_U32ToDec(number, (uint32_t)MemoryControl_Channel() + 1U, 2U);
-    LCD_DrawDigit8x9(UI_CHANNEL_X, UI_CHANNEL_Y, (uint8_t)number[0], CH_UNINVERT);
-    LCD_DrawDigit8x9((uint8_t)(UI_CHANNEL_X + 9U), UI_CHANNEL_Y, (uint8_t)number[1], CH_UNINVERT);
+    if (MemoryControl_NumberVisible() != 0U)
+    {
+        LCD_DrawDigit8x9(UI_CHANNEL_X, UI_CHANNEL_Y, (uint8_t)number[0], CH_UNINVERT);
+        LCD_DrawDigit8x9((uint8_t)(UI_CHANNEL_X + 9U), UI_CHANNEL_Y, (uint8_t)number[1], CH_UNINVERT);
+    }
     if (Entry_Active() != 0U)
     {
         /* FUNC уже виден сверху, здесь нужна только ошибка ввода. */

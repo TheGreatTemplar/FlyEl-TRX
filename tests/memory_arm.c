@@ -62,19 +62,24 @@ static void InitChip(void)
 
 int test_memory_save_reload_and_clear(void)
 {
+    uint8_t saved_channel;
     radio_preset_t preset = {21469780U, RADIO_USB, 1U, 2U, 6U};
     radio_preset_t result;
     InitChip();
     CHECK(MemoryStore_Ready() != 0U && writes == 0U && MemoryStore_Get(0U, 0) == 0U);
     CHECK(MemoryStore_Request(0U, &preset) != 0U);
+    CHECK(MemoryStore_TakeSavedChannel(&saved_channel) == 0U);
     CHECK(MemoryStore_Get(0U, 0) == 0U); /* Нельзя считать ещё не проверенную запись сохранённой. */
     Run(10U);
     CHECK(MemoryStore_Get(0U, &result) != 0U && result.hz == preset.hz && result.mode == RADIO_USB);
     CHECK(result.filter == 2U && writes == 1U);
+    CHECK(MemoryStore_TakeSavedChannel(&saved_channel) != 0U && saved_channel == 0U);
+    CHECK(MemoryStore_TakeSavedChannel(&saved_channel) == 0U);
     MemoryStore_Init(); Run(205U);
     CHECK(MemoryStore_Get(0U, &result) != 0U && result.hz == preset.hz);
     CHECK(MemoryStore_Request(0U, 0) != 0U); Run(10U);
     CHECK(MemoryStore_Get(0U, 0) == 0U);
+    CHECK(MemoryStore_TakeSavedChannel(&saved_channel) == 0U);
     MemoryStore_Init(); Run(205U);
     CHECK(MemoryStore_Get(0U, 0) == 0U && writes == 2U);
     return 0;
@@ -87,10 +92,12 @@ int test_memory_power_loss_keeps_old_copy(void)
     InitChip();
     CHECK(MemoryStore_Request(99U, &preset) == 0U && writes == 0U);
     CHECK(MemoryStore_Request(98U, &preset) != 0U); Run(10U);
+    CHECK(MemoryStore_TakeSavedChannel(0) != 0U);
     preset.hz = 7200000U;
     partial_write = 1U;
     CHECK(MemoryStore_Request(98U, &preset) != 0U); Run(10U);
     CHECK(MemoryStore_Get(98U, &result) != 0U && result.hz == 7100000U);
+    CHECK(MemoryStore_TakeSavedChannel(0) == 0U);
     MemoryStore_Init(); Run(205U);
     CHECK(MemoryStore_Get(98U, &result) != 0U && result.hz == 7100000U);
     CHECK(chip[MEMORY_EEPROM_BASE - 1U] == 0xFFU && chip[MEMORY_EEPROM_BASE + 12672U] == 0xFFU);
@@ -103,6 +110,7 @@ int test_memory_write_protection_and_absence(void)
     InitChip(); write_protected = 1U;
     CHECK(MemoryStore_Request(0U, &preset) != 0U); Run(10U);
     CHECK(MemoryStore_Get(0U, 0) == 0U && strcmp(MemoryStore_Status(), "MEM ERR") == 0);
+    CHECK(MemoryStore_TakeSavedChannel(0) == 0U);
     MemoryStore_Init(); absent = 1U; Run(205U);
     CHECK(MemoryStore_Ready() == 0U && strcmp(MemoryStore_Status(), "MEM ERR") == 0);
     return 0;

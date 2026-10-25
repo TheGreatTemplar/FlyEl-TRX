@@ -28,6 +28,8 @@ static uint8_t load_a_valid;
 static uint8_t loaded;
 static uint8_t write_channel;
 static uint8_t write_slot;
+static uint8_t saved_channel;
+static uint8_t saved_event;
 static uint8_t pending[MEMORY_RECORD_SIZE];
 static uint32_t wait_tick;
 static uint32_t poll_tick;
@@ -52,6 +54,7 @@ void MemoryStore_Init(void)
     memset(slots, 0, sizeof(slots));
     state = STORE_WAIT_CRC;
     loaded = 0U; load_channel = 0U; message = "";
+    saved_event = 0U;
 }
 
 static void Fail(void)
@@ -108,6 +111,8 @@ static uint8_t VerifyWrite(void)
     if (occupied != 0U) presets[write_channel] = preset;
     state = STORE_IDLE;
     Message((occupied != 0U) ? "SAVED" : "BLANK");
+    if (occupied != 0U)
+    { saved_channel = write_channel; saved_event = 1U; }
     return 1U;
 }
 
@@ -172,6 +177,14 @@ uint8_t MemoryStore_Request(uint8_t channel, const radio_preset_t *preset)
     MemoryRecord_Encode(pending, channel, generations[channel] + 1U, preset);
     state = STORE_WRITE;
     Message("WRITING");
+    return 1U;
+}
+
+uint8_t MemoryStore_TakeSavedChannel(uint8_t *channel)
+{
+    if (saved_event == 0U) return 0U;
+    if (channel != 0) *channel = saved_channel;
+    saved_event = 0U;
     return 1U;
 }
 
