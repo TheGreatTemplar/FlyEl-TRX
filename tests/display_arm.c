@@ -73,7 +73,7 @@ int test_display_memory_blink_keeps_two_digit_channel_and_status_fixed(void)
             memcpy(before, lcd_buffer, sizeof(before));
             now_tick = 1000U; Screens_Redraw();
             memo_on = 0U; memo_off = 0U;
-            for (y = 43U; y < 52U; y++)
+            for (y = 42U; y < 51U; y++)
             {
                 for (x = 0U; x < 128U; x++)
                 {
@@ -85,14 +85,14 @@ int test_display_memory_blink_keeps_two_digit_channel_and_status_fixed(void)
             CHECK(memo_on != 0U && memo_off == 0U);
             Text_Append(expected, labels[i]);
             LCD_ClearBuffer();
-            LCD_DrawDigit8x9(111U, 43U, (uint8_t)expected[0], CH_UNINVERT);
-            LCD_DrawDigit8x9(120U, 43U, (uint8_t)expected[1], CH_UNINVERT);
+            LCD_DrawDigit8x9(111U, 42U, (uint8_t)expected[0], CH_UNINVERT);
+            LCD_DrawDigit8x9(120U, 42U, (uint8_t)expected[1], CH_UNINVERT);
             if (occupied == 0U)
             {
-                LCD_FillRectangle(73U, 43U, 29U, 8U, PX_ON);
-                LCD_Print5x7(74U, 44U, "BLANK", 1U, CH_INVERT);
+                LCD_FillRectangle(73U, 42U, 29U, 8U, PX_ON);
+                LCD_Print5x7(74U, 43U, "BLANK", 1U, CH_INVERT);
             }
-            for (y = 43U; y < 52U; y++)
+            for (y = 42U; y < 51U; y++)
                 for (x = 70U; x < 128U; x++)
                     CHECK(((before[(y / 8U) * 128U + x] >> (y % 8U)) & 1U) == Pixel(x, y));
         }
@@ -113,6 +113,49 @@ static uint8_t MatchesText(uint8_t x, uint8_t y, const char *text)
             if (((actual[(row / 8U) * 128U + col] >> (row % 8U)) & 1U) != Pixel(col, row)) equal = 0U;
     memcpy(lcd_buffer, actual, sizeof(actual));
     return equal;
+}
+
+static uint8_t MatchesChannel99(void)
+{
+    uint8_t actual[1024];
+    uint8_t x, y, equal = 1U;
+    memcpy(actual, lcd_buffer, sizeof(actual));
+    LCD_ClearBuffer();
+    LCD_DrawDigit8x9(111U, 42U, '9', CH_UNINVERT);
+    LCD_DrawDigit8x9(120U, 42U, '9', CH_UNINVERT);
+    for (y = 42U; y < 51U; y++)
+        for (x = 111U; x < 128U; x++)
+            if (((actual[(y / 8U) * 128U + x] >> (y % 8U)) & 1U) != Pixel(x, y)) equal = 0U;
+    memcpy(lcd_buffer, actual, sizeof(actual));
+    return equal;
+}
+
+int test_display_permanent_channel_vfo_selection_memory_and_input(void)
+{
+    uint8_t x, y, i;
+    InitControls(); test_eeprom_message = "";
+    cache_used[98] = 1U; cache[98] = (radio_preset_t){7100000U, RADIO_LSB, 0U, 0U, 2U};
+    MemoryControl_Select(98U); Screens_Redraw();
+    CHECK(MatchesChannel99() != 0U && MatchesText(47U, 44U, "F1") != 0U);
+    Tap(Key_9_1, 100U); now_tick = 0U; Screens_Redraw();
+    CHECK(menu.rf_hz == 28200000U && MemoryControl_Mode() == 0U);
+    CHECK(MatchesText(47U, 44U, "MEMO") != 0U && MatchesChannel99() != 0U);
+    now_tick = 1000U; Screens_Redraw();
+    for (y = 44U; y < 51U; y++)
+        for (x = 47U; x < 70U; x++) CHECK(Pixel(x, y) == 0U);
+    CHECK(MatchesChannel99() != 0U);
+    Tap(Key_9_1, 100U); Tap(Key_2_1, 2001U); Screens_Redraw();
+    CHECK(MemoryControl_Mode() == 0U && cache[98].hz == 28200000U && store_calls == 1U);
+    CHECK(MatchesChannel99() != 0U);
+    Tap(Key_1_1, 100U); now_tick = 1000U; Screens_Redraw();
+    CHECK(MatchesText(47U, 44U, "MEMO") != 0U && MatchesChannel99() != 0U);
+    Tap(Key_1_1, 100U); Tap(Key_5_3, 100U);
+    for (i = 0U; i < 7U; i++) Tap(Key_4_3, 100U);
+    Screens_Redraw(); CHECK(MatchesChannel99() != 0U);
+    Tap(Key_5_3, 100U); Screens_Redraw(); /* INPUT ERR переносится под VFO. */
+    CHECK(strcmp(Entry_Status(), "INPUT ERR") == 0 && MatchesChannel99() != 0U);
+    CHECK(menu.rf_hz == 28200000U);
+    return 0;
 }
 
 int test_display_band_vfo_and_filter_share_fixed_column(void)
@@ -138,8 +181,8 @@ int test_display_filter_hidden_in_memory_with_or_without_channel_selection(void)
     InitControls(); test_eeprom_message = "";
     MemoryControl_ToggleMode(); Screens_Redraw();
     CHECK(MatchesText(47U, 44U, "MEMO") != 0U);
-    CHECK(Pixel(112U, 43U) != 0U && Pixel(123U, 43U) != 0U);
-    CHECK(Pixel(73U, 43U) != 0U && Pixel(102U, 51U) != 0U);
+    CHECK(Pixel(112U, 42U) != 0U && Pixel(123U, 42U) != 0U);
+    CHECK(Pixel(73U, 42U) != 0U && Pixel(102U, 50U) != 0U);
     CHECK(MatchesText(103U, 44U, "  ") != 0U);
     MemoryControl_ToggleMode(); Screens_Redraw();
     CHECK(MatchesText(47U, 44U, "F1") != 0U);
@@ -165,19 +208,19 @@ int test_display_input_background_is_flat_and_fits_maximum_length(void)
     uint8_t x, first = 128U, last = 0U, short_width = 0U;
     const char *digits = "12345678901";
     InitControls(); test_eeprom_message = ""; Tap(Key_5_3, 100U); Screens_Redraw();
-    for (x = 34U; x < 128U; x++) short_width = (uint8_t)(short_width + Pixel(x, 33U));
+    for (x = 34U; x < 128U; x++) short_width = (uint8_t)(short_width + Pixel(x, 30U));
     while (*digits != '\0') FreqEntry_Append(*digits++);
     Screens_Redraw();
     for (x = 34U; x < 128U; x++)
     {
-        CHECK(Pixel(x, 33U) == Pixel(x, 43U));
-        if (Pixel(x, 33U) != 0U)
+        CHECK(Pixel(x, 30U) == Pixel(x, 40U));
+        if (Pixel(x, 30U) != 0U)
         { if (first == 128U) first = x; last = x; }
     }
     CHECK(first >= 34U && first < last && last < 128U);
     CHECK((uint8_t)(last - first + 1U) == short_width);
     CHECK((uint8_t)(first + 2U) == FrequencyUI_MainLeftX(menu.rf_hz));
-    for (x = first; x <= last; x++) CHECK(Pixel(x, 33U) != 0U);
+    for (x = first; x <= last; x++) CHECK(Pixel(x, 30U) != 0U);
     return 0;
 }
 
@@ -190,7 +233,7 @@ int test_display_set_aligns_with_main_frequency_on_every_band(void)
         Radio_SetBand(band); Entry_Cancel(); Tap(Key_5_3, 100U); Screens_Redraw();
         first = 128U;
         for (x = 34U; x < 128U; x++)
-            if (Pixel(x, 33U) != 0U) { first = x; break; }
+            if (Pixel(x, 30U) != 0U) { first = x; break; }
         CHECK((uint8_t)(first + 2U) == FrequencyUI_MainLeftX(menu.rf_hz));
     }
     return 0;

@@ -29,6 +29,10 @@ void StatusUI_Draw(void)
     char number[5];
     uint8_t text_x = 36U;
     uint8_t show_channel = (uint8_t)(MemoryControl_Mode() != 0U || MemoryControl_Selecting() != 0U);
+    /* Выбранный канал виден на рабочем экране всегда, включая VFO и прямой ввод. */
+    Text_U32ToDec(number, (uint32_t)MemoryControl_Channel() + 1U, 2U);
+    LCD_DrawDigit8x9(UI_CHANNEL_X, UI_CHANNEL_Y, (uint8_t)number[0], CH_UNINVERT);
+    LCD_DrawDigit8x9((uint8_t)(UI_CHANNEL_X + 9U), UI_CHANNEL_Y, (uint8_t)number[1], CH_UNINVERT);
     if (Entry_Active() != 0U)
     {
         /* FUNC уже виден сверху, здесь нужна только ошибка ввода. */
@@ -43,18 +47,15 @@ void StatusUI_Draw(void)
          * с постоянной координатой, чтобы мигание не сдвигало остаток строки. */
         if (MemoryControl_Selecting() == 0U || (App_GetTick500us() / 1000U) % 2U == 0U)
             LCD_Print5x7(text_x, 44U, "MEMO", 1U, CH_UNINVERT);
-        Text_U32ToDec(number, (uint32_t)MemoryControl_Channel() + 1U, 2U);
-        LCD_DrawDigit8x9(UI_CHANNEL_X, UI_CHANNEL_Y, (uint8_t)number[0], CH_UNINVERT);
-        LCD_DrawDigit8x9((uint8_t)(UI_CHANNEL_X + 9U), UI_CHANNEL_Y, (uint8_t)number[1], CH_UNINVERT);
         /* WAIT/BLANK между MEMO и закреплённым справа номером. */
         text_x = UI_MEMORY_STATUS_X;
         if (MemoryStore_Ready() == 0U) LCD_Print5x7(text_x, 44U, "WAIT", 1U, CH_UNINVERT);
         else if (MemoryControl_Blank() != 0U)
         {
             /* Плоский инверсный фон с полем в один пиксель вокруг BLANK. */
-            LCD_FillRectangle((uint8_t)(text_x - 1U), 43U,
+            LCD_FillRectangle((uint8_t)(text_x - 1U), 42U,
                               (uint8_t)(LCD_GetText5x7Width("BLANK", 1U) + 1U), 8U, PX_ON);
-            LCD_Print5x7(text_x, 44U, "BLANK", 1U, CH_INVERT);
+            LCD_Print5x7(text_x, 43U, "BLANK", 1U, CH_INVERT);
         }
         return;
     }
