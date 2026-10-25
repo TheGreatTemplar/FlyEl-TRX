@@ -267,6 +267,9 @@ int test_controls_set_nb_menu_and_ts_unchanged(void)
     Tap(Key_10_3, 2001U); CHECK(steps_hz[menu.step_index] == 1000U);
     Tap(Key_6_3, 100U); CHECK(panel.meter == 1U);
     Tap(Key_6_3, 2001U); CHECK(Settings_Page() == 1U);
+    CHECK(Settings_Item() == 0U);
+    Tap(Key_9_3, 100U); CHECK(Settings_Item() == 4U); /* UP с первой строки на последнюю. */
+    Tap(Key_9_2, 100U); CHECK(Settings_Item() == 0U); /* DN с последней на первую. */
     Tap(Key_10_3, 100U); CHECK(steps_hz[menu.step_index] == 1000U);
     Tap(Key_6_3, 100U); CHECK(Settings_Page() == 0U);
     Tap(Key_6_1, 2001U); CHECK(Settings_Page() == 2U && panel.nb == 0U);
@@ -284,10 +287,10 @@ int test_controls_filter_memory_func_cancel_and_engineering_direction(void)
     Tap(Key_5_3, 100U); Tap(Key_1_1, 100U); Tap(Key_5_3, 2001U);
     CHECK(Entry_Active() == 0U && menu.rf_hz == 28200000U);
     Tap(Key_6_3, 2001U);
-    Tap(Key_9_3, 100U); Tap(Key_9_3, 100U); Tap(Key_9_3, 100U);
+    Tap(Key_9_2, 100U); Tap(Key_9_2, 100U); Tap(Key_9_2, 100U);
     Tap(Key_5_3, 100U); CHECK(Settings_Page() == 3U);
     Settings_Encoder(-1); CHECK(menu.step_index == 2U);
-    Tap(Key_9_3, 100U); Settings_Encoder(-1); CHECK(menu.if_index == 2U);
+    Tap(Key_9_2, 100U); Settings_Encoder(-1); CHECK(menu.if_index == 2U);
     return 0;
 }
 

@@ -71,8 +71,9 @@ uint8_t Settings_HandleKey(input_key_t key, uint8_t long_press)
     }
     if (key == Key_6_1 && long_press != 0U) { Open(2U); return 1U; }
     if (page == 0U) return 0U;
-    if (key == Key_9_2) Move(-1);
-    else if (key == Key_9_3) Move(1);
+    /* Пункты идут сверху вниз: DN — следующий, UP — предыдущий. */
+    if (key == Key_9_2) Move(1);
+    else if (key == Key_9_3) Move(-1);
     else if (key == Key_5_3)
     {
         if (page == 1U && item == 3U) Open(3U);
