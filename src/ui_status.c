@@ -38,15 +38,24 @@ void StatusUI_Draw(void)
     }
     if (show_channel != 0U)
     {
+        text_x = UI_LABEL_X;
         /* Шрифт пропорциональный: пробелы уже букв MEMO. Номер рисуем отдельно,
          * с постоянной координатой, чтобы мигание не сдвигало остаток строки. */
         if (MemoryControl_Selecting() == 0U || (App_GetTick500us() / 1000U) % 2U == 0U)
             LCD_Print5x7(text_x, 44U, "MEMO", 1U, CH_UNINVERT);
-        text_x = (uint8_t)(text_x + LCD_GetText5x7Width("MEMO", 1U) + 1U);
+        text_x = (uint8_t)(text_x + LCD_GetText5x7Width("MEMO", 1U) + 3U);
         Text_U32ToDec(number, (uint32_t)MemoryControl_Channel() + 1U, 2U);
-        Text_Append(text, number); Text_Append(text, " ");
-        if (MemoryStore_Ready() == 0U) Text_Append(text, "WAIT");
-        else if (MemoryControl_Blank() != 0U) Text_Append(text, "BLANK");
+        LCD_Print5x7(text_x, 44U, number, 1U, CH_UNINVERT);
+        text_x = (uint8_t)(text_x + LCD_GetText5x7Width(number, 1U) + 4U);
+        if (MemoryStore_Ready() == 0U) LCD_Print5x7(text_x, 44U, "WAIT", 1U, CH_UNINVERT);
+        else if (MemoryControl_Blank() != 0U)
+        {
+            /* Плоский инверсный фон с полем в один пиксель вокруг BLANK. */
+            LCD_FillRectangle((uint8_t)(text_x - 1U), 43U,
+                              (uint8_t)(LCD_GetText5x7Width("BLANK", 1U) + 1U), 8U, PX_ON);
+            LCD_Print5x7(text_x, 44U, "BLANK", 1U, CH_INVERT);
+        }
+        return;
     }
     if (show_channel == 0U)
     {

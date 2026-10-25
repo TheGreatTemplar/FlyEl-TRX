@@ -66,16 +66,18 @@ static void Tap(input_key_t key, uint32_t duration)
     key_down[key] = 0U; Keyboard_Task(INPUT_KEY_COUNT);
 }
 
-int test_controls_att_all_eight_relay_masks(void)
+int test_controls_att_six_enabled_levels_and_all_relay_masks(void)
 {
     uint8_t i;
     InitControls();
-    for (i = 1U; i <= 8U; i++)
+    for (i = 0U; i < 8U; i++)
+        CHECK(RadioPanel_AttDb(i) == (uint8_t)(i * 6U));
+    for (i = 1U; i <= 12U; i++)
     {
         Tap(Key_7_2, 100U);
-        CHECK(panel.att_mask == (i & 7U));
-        CHECK(RadioPanel_AttDb(panel.att_mask) == (uint8_t)((i & 7U) * 6U));
-        CHECK(menu.gain_db == (int8_t)(-(int8_t)((i & 7U) * 6U)));
+        CHECK(panel.att_mask == (i % 6U));
+        CHECK(RadioPanel_AttDb(panel.att_mask) == (uint8_t)((i % 6U) * 6U));
+        CHECK(menu.gain_db == (int8_t)(-(int8_t)((i % 6U) * 6U)));
     }
     return 0;
 }

@@ -13,7 +13,7 @@ uint8_t RadioPanel_AttDb(uint8_t mask)
 
 static void UpdateGain(void)
 {
-    /* Усиление предусилителя ещё не задано: P.AMP показывается отдельным флагом. */
+    /* Усиление предусилителя ещё не задано: рамка показывает P.AMP либо ослабление. */
     menu.gain_db = (int8_t)(-(int8_t)RadioPanel_AttDb(panel.att_mask));
     menu.need_redraw = 1U;
 }
@@ -27,7 +27,15 @@ void RadioPanel_Init(void)
 
 void RadioPanel_CycleAtt(void)
 {
-    panel.att_mask = (uint8_t)((panel.att_mask + 1U) & 7U);
+    /* Маски реле: OFF, -6, -12, -18, -24, -30 дБ.
+     * Последние две ступени временно исключены для эксперимента. */
+    static const uint8_t masks[] = {
+        0U, 1U, 2U, 3U, 4U, 5U,
+        /* 6U, 7U, */ /* -36, -42 дБ: вернуть в цикл после проверки. */
+    };
+    uint8_t next = (uint8_t)(panel.att_mask + 1U);
+    if (next >= sizeof(masks) / sizeof(masks[0])) next = 0U;
+    panel.att_mask = masks[next];
     UpdateGain();
 }
 

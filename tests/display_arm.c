@@ -34,7 +34,7 @@ int test_display_snapshots(void)
     Tap(Key_5_3, 100U); Tap(Key_1_2, 100U); Tap(Key_1_1, 100U); Tap(Key_5_1, 100U);
     Screens_Redraw();
     Entry_Cancel();
-    panel.att_mask = 7U; menu.gain_db = -42;
+    panel.att_mask = 5U; menu.gain_db = -30;
     panel.preamp = 1U; panel.nb = 1U; panel.comp = 1U; panel.tuner = 2U;
     RadioVfo_ChangeMode(1U); RadioVfo_ChangeMode(1U); RadioVfo_ChangeMode(0U);
     menu.last_key = Key_10_1;
@@ -78,16 +78,20 @@ int test_display_memory_blink_keeps_two_digit_channel_and_status_fixed(void)
                 for (x = 0U; x < 128U; x++)
                 {
                     uint8_t old = (uint8_t)((before[(y / 8U) * 128U + x] >> (y % 8U)) & 1U);
-                    if (x >= 36U && x < 60U) { memo_on |= old; memo_off |= Pixel(x, y); }
+                    if (x >= 47U && x < 70U) { memo_on |= old; memo_off |= Pixel(x, y); }
                     else CHECK(old == Pixel(x, y));
                 }
             }
             CHECK(memo_on != 0U && memo_off == 0U);
             Text_Append(expected, labels[i]);
-            Text_Append(expected, (occupied != 0U) ? " " : " BLANK");
-            LCD_ClearBuffer(); LCD_Print5x7(60U, 44U, expected, 1U, CH_UNINVERT);
+            LCD_ClearBuffer(); LCD_Print5x7(73U, 44U, expected, 1U, CH_UNINVERT);
+            if (occupied == 0U)
+            {
+                LCD_FillRectangle(87U, 43U, 29U, 8U, PX_ON);
+                LCD_Print5x7(88U, 44U, "BLANK", 1U, CH_INVERT);
+            }
             for (y = 44U; y < 51U; y++)
-                for (x = 60U; x < 128U; x++)
+                for (x = 70U; x < 128U; x++)
                     CHECK(((before[(y / 8U) * 128U + x] >> (y % 8U)) & 1U) == Pixel(x, y));
         }
     }
@@ -131,8 +135,10 @@ int test_display_filter_hidden_in_memory_with_or_without_channel_selection(void)
 {
     InitControls(); test_eeprom_message = "";
     MemoryControl_ToggleMode(); Screens_Redraw();
-    CHECK(MatchesText(36U, 44U, "MEMO01 BLANK") != 0U);
-    CHECK(MatchesText(106U, 44U, "    ") != 0U);
+    CHECK(MatchesText(47U, 44U, "MEMO") != 0U);
+    CHECK(MatchesText(73U, 44U, "01") != 0U);
+    CHECK(Pixel(87U, 43U) != 0U && Pixel(116U, 51U) != 0U);
+    CHECK(MatchesText(117U, 44U, "  ") != 0U);
     MemoryControl_ToggleMode(); Screens_Redraw();
     CHECK(MatchesText(47U, 44U, "F1") != 0U);
     return 0;
