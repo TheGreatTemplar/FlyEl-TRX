@@ -1,6 +1,7 @@
 /* Полные жесты физических кнопок исполняются на настоящем ARM-коде контроллеров.
  * GPIO и EEPROM подменены; протокол EEPROM проверяется отдельно в memory_arm.c. */
 #include <string.h>
+#include "text_utils.c"
 #include "ts_button.c"
 #include "key_gesture.c"
 #include "key_layout.c"
@@ -14,54 +15,22 @@
 #include "entry_controller.c"
 #include "scan_control.c"
 #include "service_catalog.c"
+#include "uart_config.c"
+#include "service_uart.c"
+#include "service_keytest.c"
 #include "service_control.c"
 #include "settings_control.c"
 #include "keyboard.c"
 #define CHECK(expr) do { if (!(expr)) return __LINE__; } while (0)
 
-generator_menu_t menu;
-static uint8_t key_down[INPUT_KEY_COUNT];
-static uint32_t now_tick;
-static uint32_t synth_frequency;
-static uint32_t store_calls;
-static uint8_t mock_saved_channel;
-static uint8_t cache_used[MEMORY_CHANNEL_COUNT];
-static radio_preset_t cache[MEMORY_CHANNEL_COUNT];
-
-uint32_t App_GetTick500us(void) { return now_tick; }
-uint8_t Input_KeyIsDown(input_key_t key) { return key_down[key]; }
-char Input_KeyToChar(input_key_t key) { return KeyLayout_Character(key); }
-const char *Input_KeyName(input_key_t key) { (void)key; return ""; }
-si5351_status_t Si5351_SetVfoHighSide(uint8_t clk, uint32_t hz, uint32_t if_hz)
-{ (void)clk; (void)if_hz; synth_frequency = hz; return SI5351_OK; }
-
-void MemoryStore_Init(void) { memset(cache_used, 0, sizeof(cache_used)); store_calls = 0U; mock_saved_channel = 0xFFU; }
-uint8_t MemoryStore_TakeSavedChannel(uint8_t *channel)
-{
-    if (mock_saved_channel >= MEMORY_CHANNEL_COUNT) return 0U;
-    *channel = mock_saved_channel; mock_saved_channel = 0xFFU; return 1U;
-}
-uint8_t MemoryStore_Task(void) { return 0U; }
-uint8_t MemoryStore_Ready(void) { return 1U; }
-uint8_t MemoryStore_Busy(void) { return 0U; }
-uint8_t MemoryStore_Get(uint8_t index, radio_preset_t *preset)
-{
-    if (cache_used[index] == 0U) return 0U;
-    if (preset != 0) *preset = cache[index];
-    return 1U;
-}
-uint8_t MemoryStore_Request(uint8_t index, const radio_preset_t *preset)
-{
-    store_calls++; cache_used[index] = (uint8_t)(preset != 0);
-    if (preset != 0) cache[index] = *preset;
-    return 1U;
-}
+#include "control_mocks.h"
 
 static void InitControls(void)
 {
     memset(&menu, 0, sizeof(menu));
     memset(key_down, 0, sizeof(key_down));
     now_tick = 0U; menu.rf_hz = 28200000U; menu.band_index = 8U; menu.step_index = 3U;
+    mock_uart_config = (uart_config_t){115200U, 8U, UART_PARITY_NONE, UART_STOP_ONE, 0U}; mock_uart_saves = 0U;
     RadioVfo_Init(); RadioPanel_Init(); MemoryControl_Init();
     Entry_Init(); Settings_Init(); Scan_Init(); Keyboard_Init(); Radio_InitTS();
 }

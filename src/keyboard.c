@@ -11,6 +11,8 @@
 #include "settings_control.h"
 #include "scan_control.h"
 #include "key_layout.h"
+#include "service_control.h"
+#include "service_keytest.h"
 
 static key_gesture_t gestures[27];
 static uint8_t suppressed[27];
@@ -143,6 +145,19 @@ void Keyboard_Task(input_key_t pressed)
     uint8_t i;
     uint32_t now = App_GetTick500us();
     uint8_t stopped_scan = 0U;
+    if (Service_Active() != 0U && Service_Stage() == SERVICE_KEY_TEST)
+    {
+        if (KeyTest_Poll() != 0U)
+        {
+            Service_EndKeyTest();
+            for (i = 0U; i < 27U; i++)
+            {
+                suppressed[i] = Input_KeyIsDown((input_key_t)((uint8_t)Key_2_1 + i));
+                gestures[i].active = 0U;
+            }
+        }
+        return;
+    }
     /* 0 — ожидание сочетания, 1 — отсчёт 5 с, 2 — ожидание отпускания обеих.
      * Раннее отпускание отменяет вход и не запускает одиночные SET/FILTER. */
     if (service_chord_latched != 0U)

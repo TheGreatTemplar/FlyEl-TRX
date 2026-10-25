@@ -131,6 +131,16 @@ int test_service_catalog_and_navigation_visit_all_192_items_without_rf_changes(v
             CHECK(current->id == ((uint16_t)section + 1U) * 100U + item + 1U);
             CHECK(current->label[0] != '\0' && current->type <= SERVICE_BOOL);
             Service_HandleKey(Key_5_3);
+            if (current->id == 1504U)
+            {
+                CHECK(Service_Stage() == SERVICE_UART);
+                Service_HandleKey(Key_5_1); visited++; continue;
+            }
+            if (current->id == 1413U || current->id == 1611U)
+            {
+                CHECK(Service_Stage() == SERVICE_KEY_TEST);
+                Service_EndKeyTest(); visited++; continue;
+            }
             if (Service_BandScoped() != 0U)
             {
                 CHECK(Service_Stage() == SERVICE_BAND);

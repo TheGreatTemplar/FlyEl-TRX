@@ -5,6 +5,7 @@
 #include "app_state.h"
 #include "gmg12864.h"
 #include "text_utils.h"
+#include "ui_service_tools.h"
 
 static void Code(char *text, uint16_t id)
 {
@@ -23,6 +24,8 @@ void ServiceUI_Draw(void)
                     ((stage == SERVICE_BAND) ? 9U : service_sections[section].count);
     uint8_t first = (uint8_t)((selected / 4U) * 4U);
     char text[24], part[8];
+    if (stage == SERVICE_UART) { ServiceTools_DrawUart(); return; }
+    if (stage == SERVICE_KEY_TEST) { ServiceTools_DrawKeyboard(); return; }
     LCD_ClearBuffer();
     LCD_Print5x7(0U, 0U, "SERVICE", 1U, CH_UNINVERT);
     if (stage == SERVICE_VIEW)
@@ -43,7 +46,7 @@ void ServiceUI_Draw(void)
         uint8_t row;
         Text_U32ToDec(text, (uint32_t)selected + 1U, 2U); Text_Append(text, " OF ");
         Text_U32ToDec(part, count, 2U); Text_Append(text, part);
-        LCD_Print5x7(69U, 0U, text, 1U, CH_UNINVERT);
+        LCD_Print5x7((uint8_t)(LCD_WIDTH - LCD_GetText5x7Width(text, 1U)), 0U, text, 1U, CH_UNINVERT);
         for (row = 0U; row < 4U && (uint16_t)first + row < count; row++)
         {
             uint8_t index = (uint8_t)(first + row);

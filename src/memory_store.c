@@ -7,6 +7,7 @@
 #include "eeprom_startup.h"
 #include "at24c256.h"
 #include <string.h>
+#include "uart_store.h"
 
 #if MEMORY_CHANNEL_COUNT > 99U || MEMORY_CHANNEL_COUNT < 1U
 #error MEMORY_CHANNEL_COUNT must be in 1..99
@@ -120,6 +121,7 @@ uint8_t MemoryStore_Task(void)
 {
     uint32_t now = App_GetTick500us();
     i2c2_soft_status_t status;
+    if (UARTStore_Busy() != 0U) return 0U;
     if (message[0] != '\0' && (uint32_t)(now - message_tick) >= 6000U)
     { message = ""; return 1U; }
     switch (state)
@@ -170,6 +172,7 @@ uint8_t MemoryStore_Get(uint8_t channel, radio_preset_t *preset)
 
 uint8_t MemoryStore_Request(uint8_t channel, const radio_preset_t *preset)
 {
+    if (UARTStore_Busy() != 0U) { Message("MEM BUSY"); return 0U; }
     if (loaded == 0U || state != STORE_IDLE || channel >= MEMORY_CHANNEL_COUNT)
     { Message((state == STORE_ERROR) ? "MEM ERR" : ((loaded == 0U) ? "MEM WAIT" : "MEM BUSY")); return 0U; }
     write_channel = channel;

@@ -1,6 +1,33 @@
 #include "uart1.h"
 
 #define UART1_PCLK_HZ               72000000UL
+static uart_config_t uart_active_config = {115200U, 8U, UART_PARITY_NONE, UART_STOP_ONE, 0U};
+
+const uart_config_t *UART1_GetConfig(void) { return &uart_active_config; }
+
+uint8_t UART1_ApplyConfig(const uart_config_t *config)
+{
+    static const uint8_t stop_codes[] = {0U, 2U, 1U, 3U};
+    uint32_t cr1 = USART_CR1_TE | USART_CR1_RE | USART_CR1_UE;
+    uint32_t timeout = 1000000U;
+    if (UARTConfig_Valid(config) == 0U) return 0U;
+    /* M включает parity в длину слова: 8 данных с parity требуют M=1. RM0008 27.3.7. */
+    if (config->data_bits == 9U || config->parity != UART_PARITY_NONE) cr1 |= USART_CR1_M;
+    if (config->parity != UART_PARITY_NONE) cr1 |= USART_CR1_PCE;
+    if (config->parity == UART_PARITY_ODD) cr1 |= USART_CR1_PS;
+    if ((USART1->CR1 & USART_CR1_UE) != 0U)
+    {
+        while ((USART1->SR & USART_SR_TC) == 0U)
+            if (--timeout == 0U) return 0U;
+    }
+    USART1->CR1 = 0U;
+    USART1->CR2 = (uint16_t)((uint32_t)stop_codes[config->stop] << 12U);
+    USART1->CR3 = 0U;
+    USART1->BRR = (uint16_t)((UART1_PCLK_HZ + config->baud / 2U) / config->baud);
+    USART1->CR1 = (uint16_t)cr1;
+    uart_active_config = *config;
+    return 1U;
+}
 
 static void GPIO_ConfigAFPushPull(GPIO_TypeDef *gpio, uint8_t pin)
 {
@@ -53,6 +80,7 @@ static void GPIO_ConfigInputFloating(GPIO_TypeDef *gpio, uint8_t pin)
 /* Настраивает PA9/PA10 и скорость UART1; частота APB2 — 72 МГц. */
 void UART1_Init(uint32_t baudrate)
 {
+    uart_config_t config = {baudrate, 8U, UART_PARITY_NONE, UART_STOP_ONE, 0U};
     RCC->APB2ENR |= RCC_APB2ENR_IOPAEN |
                     RCC_APB2ENR_AFIOEN |
                     RCC_APB2ENR_USART1EN;
@@ -68,23 +96,23 @@ void UART1_Init(uint32_t baudrate)
     USART1->CR2 = 0U;
     USART1->CR3 = 0U;
 
-    /*
-     * Для oversampling by 16 регистр BRR можно считать как PCLK / baud.
-     * Для 72 MHz и 115200 получается 625 = 0x0271.
-     */
-    USART1->BRR = (uint16_t)((UART1_PCLK_HZ + (baudrate / 2U)) / baudrate);
-
-    USART1->CR1 = USART_CR1_TE | USART_CR1_RE | USART_CR1_UE;
+    if (UARTConfig_Valid(&config) == 0U) config.baud = 115200U;
+    (void)UART1_ApplyConfig(&config);
 }
 
 /* Передаёт символ, ожидая свободного регистра передатчика. */
 void UART1_SendChar(char ch)
 {
+    UART1_SendWord((uint16_t)(uint8_t)ch);
+}
+
+void UART1_SendWord(uint16_t word)
+{
     while ((USART1->SR & USART_SR_TXE) == 0U)
     {
     }
 
-    USART1->DR = (uint16_t)ch;
+    USART1->DR = word & ((uart_active_config.data_bits == 9U) ? 0x01FFU : 0x00FFU);
 }
 
 /* Передаёт строку с нулевым завершением без добавления перевода строки. */

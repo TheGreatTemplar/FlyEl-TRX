@@ -17,6 +17,7 @@
 #include "settings_control.h"
 #include "scan_control.h"
 #include "service_control.h"
+#include "uart_store.h"
 
 generator_menu_t menu;
 
@@ -84,6 +85,7 @@ void GeneratorMenu_Init(void)
     Keyboard_Init();
     RadioPanel_Init();
     MemoryControl_Init();
+    UARTStore_Init();
     Entry_Init();
     Settings_Init();
     Scan_Init();
@@ -117,6 +119,7 @@ void GeneratorMenu_Task(void)
     int32_t steps;
     input_key_t key;
     if (EEPROM_TestTask() != 0U) menu.need_redraw = 1U;
+    if (UARTStore_Task() != 0U) menu.need_redraw = 1U;
     MemoryControl_Task();
     UpdateAdc();
     Entry_Task();
