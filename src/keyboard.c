@@ -14,10 +14,12 @@
 
 static key_gesture_t gestures[27];
 static uint8_t suppressed[27];
+static uint8_t service_chord_latched;
 
 void Keyboard_Init(void)
 {
     uint8_t i;
+    service_chord_latched = 0U;
     for (i = 0U; i < 27U; i++)
     {
         gestures[i].active = 0U;
@@ -137,6 +139,24 @@ void Keyboard_Task(input_key_t pressed)
     uint8_t i;
     uint32_t now = App_GetTick500us();
     uint8_t stopped_scan = 0U;
+    /* Сочетание проверяем до одиночных жестов. Ждём отпускания обеих кнопок,
+     * чтобы оставшийся SET/FILTER и очередь нажатий не выполнили команду. */
+    if (service_chord_latched != 0U)
+    {
+        if (Input_KeyIsDown(Key_6_3) == 0U && Input_KeyIsDown(Key_10_2) == 0U)
+            service_chord_latched = 0U;
+        return;
+    }
+    if (Entry_Active() == 0U && Input_KeyIsDown(Key_6_3) != 0U && Input_KeyIsDown(Key_10_2) != 0U)
+    {
+        uint8_t set_index = (uint8_t)((uint8_t)Key_6_3 - (uint8_t)Key_2_1);
+        uint8_t filter_index = (uint8_t)((uint8_t)Key_10_2 - (uint8_t)Key_2_1);
+        suppressed[set_index] = 1U; suppressed[filter_index] = 1U;
+        gestures[set_index].active = 0U; gestures[filter_index].active = 0U;
+        service_chord_latched = 1U;
+        if (Settings_Page() != 3U) (void)Settings_OpenService();
+        return;
+    }
     if (pressed >= Key_2_1 && pressed < INPUT_KEY_COUNT && pressed != Key_4_2 && Scan_Active() != 0U)
     {
         Scan_Stop();
@@ -181,7 +201,7 @@ void Keyboard_Task(input_key_t pressed)
         }
         event = KeyGesture_Update(&gestures[i], down,
                     (uint8_t)(key == pressed),
-                    (uint8_t)(key == Key_9_2 || key == Key_9_3), now);
+                    (uint8_t)((key == Key_9_2 || key == Key_9_3) && Settings_Page() != 3U), now);
         if (event != KEY_GESTURE_NONE)
             Execute(key, event);
     }

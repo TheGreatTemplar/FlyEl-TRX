@@ -1,17 +1,17 @@
-/* SET: быстрые установки; инженерное меню доступно отдельным пунктом.
- * Комбинация SET+PWR пока недоступна: кнопка PWR в схеме не назначена. */
+/* SET: быстрые установки. SERVICE открывается отдельным сочетанием SET + FILTER. */
 #include "settings_control.h"
 #include "app_state.h"
 #include "radio_panel.h"
 #include "radio_control.h"
 #include "scan_control.h"
 #include "radio_vfo.h"
+#include "service_control.h"
 
-static uint8_t page; /* 0 рабочий экран, 1 quick, 2 NB, 3 инженерный. */
+static uint8_t page; /* 0 рабочий экран, 1 quick, 2 NB. SERVICE возвращается как страница 3. */
 static uint8_t item;
 
-void Settings_Init(void) { page = 0U; item = 0U; }
-uint8_t Settings_Page(void) { return page; }
+void Settings_Init(void) { page = 0U; item = 0U; Service_Init(); }
+uint8_t Settings_Page(void) { return (Service_Active() != 0U) ? 3U : page; }
 uint8_t Settings_Item(void) { return item; }
 
 static void Open(uint8_t next)
@@ -32,6 +32,7 @@ static void Move(int32_t steps)
 
 void Settings_Encoder(int32_t steps)
 {
+    if (Service_Active() != 0U) { Service_Encoder(steps); return; }
     if (steps == 0) return;
     if (page == 2U || (page == 1U && item == 0U))
     {
@@ -42,26 +43,19 @@ void Settings_Encoder(int32_t steps)
     }
     else if (page == 1U && item == 1U) Scan_AdjustInterval(steps);
     else if (page == 1U && item == 2U) RadioVfo_AdjustFilter(steps);
-    else if (page == 3U && (item == 0U || item == 1U))
-    {
-        int32_t count = (item == 0U) ? 6 : 3;
-        int32_t current = (item == 0U) ? menu.step_index : menu.if_index;
-        int32_t value = (current + steps % count) % count;
-        if (value < 0) value += count;
-        if (item == 0U) menu.step_index = (uint8_t)value;
-        else { menu.if_index = (uint8_t)value; Radio_ApplySynth(); }
-    }
-    else if (page == 3U && item == 2U)
-    {
-        int32_t band = ((int32_t)menu.band_index + steps % Radio_BandsCount()) % Radio_BandsCount();
-        if (band < 0) band += Radio_BandsCount();
-        Radio_SetBand((uint8_t)band);
-    }
     menu.need_redraw = 1U;
+}
+
+uint8_t Settings_OpenService(void)
+{
+    if (Service_Open() == 0U) return 0U;
+    page = 0U; item = 0U;
+    return 1U;
 }
 
 uint8_t Settings_HandleKey(input_key_t key, uint8_t long_press)
 {
+    if (Service_Active() != 0U) { Service_HandleKey(key); return 1U; }
     if (key == Key_6_3)
     {
         if (long_press != 0U) Open((page == 0U) ? 1U : 0U);
@@ -76,7 +70,7 @@ uint8_t Settings_HandleKey(input_key_t key, uint8_t long_press)
     else if (key == Key_9_3) Move(-1);
     else if (key == Key_5_3)
     {
-        if (page == 1U && item == 3U) Open(3U);
+        if (page == 1U && item == 3U) return 1U; /* Подсказка входа только двумя кнопками. */
         else if (item == 4U || page == 2U) Open(0U);
         else if (page == 1U && item == 2U) RadioVfo_CycleFilter();
         else Settings_Encoder(1);

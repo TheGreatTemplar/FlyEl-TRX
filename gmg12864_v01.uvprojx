@@ -789,6 +789,26 @@
               <FilePath>.\src\scan_control.h</FilePath>
             </File>
             <File>
+              <FileName>service_catalog.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\service_catalog.c</FilePath>
+            </File>
+            <File>
+              <FileName>service_control.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\service_control.c</FilePath>
+            </File>
+            <File>
+              <FileName>service_values.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\service_values.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_service.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\ui_service.c</FilePath>
+            </File>
+            <File>
               <FileName>settings_control.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\settings_control.c</FilePath>

@@ -8,14 +8,16 @@
 #include "ui_widgets.c"
 #include "ui_frequency.c"
 #include "ui_smeter.c"
+#include "service_values.c"
 void LCD_TestUpdate(void);
 #define LCD_Update LCD_TestUpdate
+#include "ui_service.c"
 #include "ui_settings.c"
 #include "ui_status.c"
 #include "ui_screens.c"
 #undef LCD_Update
 
-uint8_t display_snapshots[7][1024];
+uint8_t display_snapshots[13][1024];
 uint32_t display_count;
 static const char *test_eeprom_message;
 
@@ -24,7 +26,7 @@ const char *MemoryStore_Status(void) { return ""; }
 const char *EEPROM_TestStatus(void) { return test_eeprom_message; }
 void LCD_TestUpdate(void)
 {
-    if (display_count < 7U) memcpy(display_snapshots[display_count++], lcd_buffer, 1024U);
+    if (display_count < 13U) memcpy(display_snapshots[display_count++], lcd_buffer, 1024U);
 }
 
 int test_display_snapshots(void)
@@ -45,7 +47,34 @@ int test_display_snapshots(void)
     Tap(Key_6_3, 2001U); Screens_Redraw();
     InitControls(); test_eeprom_message = "CRC:FF00"; Screens_Redraw();
     InitControls(); test_eeprom_message = ""; Tap(Key_7_1, 100U); Screens_Redraw();
-    CHECK(display_count == 7U);
+    CHECK(Settings_OpenService() != 0U); Screens_Redraw();
+    Service_Encoder(16); Screens_Redraw();
+    Service_HandleKey(Key_9_2); Screens_Redraw();
+    Service_HandleKey(Key_5_3); Screens_Redraw();
+    Service_HandleKey(Key_9_3); Service_HandleKey(Key_9_3);
+    Service_Encoder(-14); Service_HandleKey(Key_5_3); Service_Encoder(5);
+    Service_HandleKey(Key_9_2); Screens_Redraw();
+    Service_HandleKey(Key_9_3); Service_HandleKey(Key_9_3);
+    Service_Encoder(13); Service_HandleKey(Key_5_3); Service_Encoder(2);
+    Service_HandleKey(Key_9_2); Screens_Redraw();
+    CHECK(display_count == 13U);
+    return 0;
+}
+
+int test_display_service_labels_and_statuses_fit_screen(void)
+{
+    uint16_t i;
+    char label[24], value[24], detail[24];
+    InitControls();
+    for (i = 0U; i < SERVICE_ITEM_COUNT; i++)
+    {
+        Code(label, service_items[i].id); Text_Append(label, " ");
+        Text_Append(label, service_items[i].label);
+        CHECK(strlen(label) < sizeof(label) && LCD_GetText5x7Width(label, 1U) < 127U);
+        ServiceValues_Read(service_items[i].id, value, detail);
+        CHECK(strlen(value) < sizeof(value) && strlen(detail) < sizeof(detail));
+        CHECK(LCD_GetText5x7Width(value, 1U) < 128U && LCD_GetText5x7Width(detail, 1U) < 128U);
+    }
     return 0;
 }
 

@@ -16,6 +16,7 @@
 #include "entry_controller.h"
 #include "settings_control.h"
 #include "scan_control.h"
+#include "service_control.h"
 
 generator_menu_t menu;
 
@@ -33,7 +34,7 @@ static void UpdateAdc(void)
         menu.adc0_mv = ADC1_App_ReadMv(ADC_APP_CH0, ADC_VREF_MV);
         menu.adc1_mv = ADC1_App_ReadMv(ADC_APP_CH1, ADC_VREF_MV);
 
-        if (menu.menu_active == 0U)
+        if (menu.menu_active == 0U || Service_Active() != 0U)
         {
             menu.need_redraw = 1U;
         }

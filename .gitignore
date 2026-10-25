@@ -27,6 +27,7 @@
 !/doc/KeyBoard_941.jpg
 !/doc/TRX_Fly_STM32F103C8T6_pinout_final.xlsx
 !/doc/Раскладка клавиатуры FlyEl.xlsx
+!/doc/FLyEl_Service_Menu_Engineering_Spec_v1_0_new_link.docx
 
 # Per-machine tools and credentials must never be committed.
 .env

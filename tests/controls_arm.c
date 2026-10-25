@@ -13,6 +13,8 @@
 #include "memory_control.c"
 #include "entry_controller.c"
 #include "scan_control.c"
+#include "service_catalog.c"
+#include "service_control.c"
 #include "settings_control.c"
 #include "keyboard.c"
 #define CHECK(expr) do { if (!(expr)) return __LINE__; } while (0)
@@ -277,7 +279,7 @@ int test_controls_set_nb_menu_and_ts_unchanged(void)
     return 0;
 }
 
-int test_controls_filter_memory_func_cancel_and_engineering_direction(void)
+int test_controls_filter_memory_func_cancel_and_service_chord_hint(void)
 {
     InitControls(); Tap(Key_10_2, 100U); CHECK(RadioVfo_Filter() == 1U);
     Tap(Key_10_1, 2001U); CHECK(RadioVfo_Filter() == 0U);
@@ -288,9 +290,8 @@ int test_controls_filter_memory_func_cancel_and_engineering_direction(void)
     CHECK(Entry_Active() == 0U && menu.rf_hz == 28200000U);
     Tap(Key_6_3, 2001U);
     Tap(Key_9_2, 100U); Tap(Key_9_2, 100U); Tap(Key_9_2, 100U);
-    Tap(Key_5_3, 100U); CHECK(Settings_Page() == 3U);
-    Settings_Encoder(-1); CHECK(menu.step_index == 2U);
-    Tap(Key_9_2, 100U); Settings_Encoder(-1); CHECK(menu.if_index == 2U);
+    Tap(Key_5_3, 100U); CHECK(Settings_Page() == 1U && Service_Active() == 0U);
+    CHECK(menu.step_index == 3U && menu.if_index == 0U);
     return 0;
 }
 
