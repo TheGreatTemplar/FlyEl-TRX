@@ -6,6 +6,8 @@
 void FreqEntry_Start(uint8_t channel_mode);
 /* Возвращает 1 только при добавлении допустимой цифры. */
 uint8_t FreqEntry_Append(char ch);
+/* Удаляет последнюю цифру в основном цикле; пустой буфер оставляет пустым. */
+void FreqEntry_Backspace(void);
 /* Буфер результата: минимум FREQ_INPUT_MAX_LEN + 3 символа (две точки и ноль). */
 void FreqEntry_Format(char *text);
 uint8_t FreqEntry_Parse(uint32_t *hz);

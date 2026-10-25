@@ -12,6 +12,7 @@
 #include "app_state.h"
 #include "app_time.h"
 #include "gmg12864.h"
+#include "ui_layout.h"
 
 const char *StatusUI_Header(void)
 {
@@ -49,12 +50,16 @@ void StatusUI_Draw(void)
     }
     if (show_channel == 0U)
     {
+        char filter[4] = "F";
         if (panel.nb != 0U) Text_Append(text, "N");
         if (panel.comp != 0U) Text_Append(text, "C");
         if (panel.vox != 0U && RadioMode_IsSSB(RadioVfo_Mode()) != 0U) Text_Append(text, "V");
         if (panel.tuner != 0U) Text_Append(text, (panel.tuner == 2U) ? "T*" : "T");
+        Text_U32ToDec(number, (uint32_t)RadioVfo_Filter() + 1U, 1U);
+        Text_Append(filter, number);
+        LCD_Print5x7(UI_LABEL_X, 44U, filter, 1U, CH_UNINVERT);
+        /* Прочие флаги идут после фильтра, не меняя его координату. */
+        text_x = (uint8_t)(UI_LABEL_X + LCD_GetText5x7Width(filter, 1U) + 4U);
     }
-    Text_Append(text, " F");
-    Text_U32ToDec(number, (uint32_t)RadioVfo_Filter() + 1U, 1U); Text_Append(text, number);
     LCD_Print5x7(text_x, 44U, text, 1U, CH_UNINVERT);
 }

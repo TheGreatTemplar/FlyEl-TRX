@@ -84,13 +84,57 @@ int test_display_memory_blink_keeps_two_digit_channel_and_status_fixed(void)
             }
             CHECK(memo_on != 0U && memo_off == 0U);
             Text_Append(expected, labels[i]);
-            Text_Append(expected, (occupied != 0U) ? "  F1" : " BLANK F1");
+            Text_Append(expected, (occupied != 0U) ? " " : " BLANK");
             LCD_ClearBuffer(); LCD_Print5x7(60U, 44U, expected, 1U, CH_UNINVERT);
             for (y = 44U; y < 51U; y++)
                 for (x = 60U; x < 128U; x++)
                     CHECK(((before[(y / 8U) * 128U + x] >> (y % 8U)) & 1U) == Pixel(x, y));
         }
     }
+    return 0;
+}
+
+/* Сравнивает фрагмент кадра с эталонной надписью, сохраняя остальной кадр. */
+static uint8_t MatchesText(uint8_t x, uint8_t y, const char *text)
+{
+    uint8_t actual[1024];
+    uint8_t col, row, equal = 1U;
+    uint8_t width = LCD_GetText5x7Width(text, 1U);
+    memcpy(actual, lcd_buffer, sizeof(actual));
+    LCD_ClearBuffer(); LCD_Print5x7(x, y, text, 1U, CH_UNINVERT);
+    for (row = y; row < (uint8_t)(y + 7U); row++)
+        for (col = x; col < (uint8_t)(x + width); col++)
+            if (((actual[(row / 8U) * 128U + col] >> (row % 8U)) & 1U) != Pixel(col, row)) equal = 0U;
+    memcpy(lcd_buffer, actual, sizeof(actual));
+    return equal;
+}
+
+int test_display_band_vfo_and_filter_share_fixed_column(void)
+{
+    uint8_t band;
+    InitControls(); test_eeprom_message = "";
+    panel.nb = 1U; panel.comp = 1U; panel.vox = 1U; panel.tuner = 2U;
+    RadioVfo_CycleFilter(); RadioVfo_CycleFilter();
+    for (band = 0U; band < Radio_BandsCount(); band++)
+    {
+        Radio_SetBand(band); RadioVfo_CopyAToB(); Screens_Redraw();
+        CHECK(MatchesText(47U, 2U, bands[band].name) != 0U);
+        CHECK(MatchesText(47U, 33U, "VFOB") != 0U);
+        CHECK(MatchesText(47U, 44U, "F3") != 0U);
+    }
+    RadioVfo_Switch(); Screens_Redraw();
+    CHECK(MatchesText(47U, 33U, "VFOA") != 0U);
+    return 0;
+}
+
+int test_display_filter_hidden_in_memory_with_or_without_channel_selection(void)
+{
+    InitControls(); test_eeprom_message = "";
+    MemoryControl_ToggleMode(); Screens_Redraw();
+    CHECK(MatchesText(36U, 44U, "MEMO01 BLANK") != 0U);
+    CHECK(MatchesText(106U, 44U, "    ") != 0U);
+    MemoryControl_ToggleMode(); Screens_Redraw();
+    CHECK(MatchesText(47U, 44U, "F1") != 0U);
     return 0;
 }
 

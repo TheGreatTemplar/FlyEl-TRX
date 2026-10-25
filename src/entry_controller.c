@@ -77,7 +77,12 @@ uint8_t Entry_HandleKey(input_key_t key)
     ch = KeyLayout_Character(key);
     if (ch != '\0')
     {
-        if (channel_target != 0U && ch == '.') { error = 1U; return 1U; }
+        if (channel_target != 0U && ch == '.')
+        {
+            FreqEntry_Backspace();
+            activity_tick = App_GetTick500us(); error = 0U;
+            return 1U;
+        }
         if (FreqEntry_Append(ch) != 0U)
         { activity_tick = App_GetTick500us(); error = 0U; }
         return 1U;

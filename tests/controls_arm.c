@@ -366,6 +366,27 @@ int test_func_restarts_frequency_after_error_without_waiting(void)
     return 0;
 }
 
+int test_channel_dot_backspaces_without_error_and_refreshes_timeout(void)
+{
+    InitControls(); Tap(Key_9_1, 100U); Tap(Key_5_3, 100U);
+    Tap(Key_5_1, 100U); /* Пустой буфер: остаёмся в вводе без ошибки. */
+    CHECK(Entry_Active() != 0U && menu.freq_input_len == 0U && strcmp(Entry_Status(), "FUNC") == 0);
+    Tap(Key_1_1, 100U); Tap(Key_1_2, 100U);
+    now_tick += FUNC_TIMEOUT_TICKS - 10U;
+    Tap(Key_5_1, 2001U); /* Удержание также удаляет только одну цифру. */
+    now_tick += 20U; Entry_Task();
+    CHECK(Entry_Active() != 0U && strcmp(menu.freq_input, "1") == 0);
+    Tap(Key_4_3, 100U); Tap(Key_5_3, 100U);
+    CHECK(Entry_Active() == 0U && MemoryControl_Channel() == 18U);
+    Tap(Key_5_3, 100U); Tap(Key_5_2, 100U); Tap(Key_5_2, 100U); Tap(Key_5_3, 100U);
+    CHECK(strcmp(Entry_Status(), "INPUT ERR") == 0);
+    Tap(Key_5_1, 100U);
+    CHECK(strcmp(Entry_Status(), "FUNC") == 0 && strcmp(menu.freq_input, "0") == 0);
+    Tap(Key_5_1, 100U); Tap(Key_4_3, 100U); Tap(Key_4_3, 100U); Tap(Key_5_3, 100U);
+    CHECK(Entry_Active() == 0U && MemoryControl_Channel() == 98U);
+    return 0;
+}
+
 int test_func_restarts_channel_after_error_and_preserves_target(void)
 {
     InitControls(); Tap(Key_9_1, 100U); Tap(Key_5_3, 100U);

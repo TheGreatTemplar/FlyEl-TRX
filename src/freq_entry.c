@@ -39,6 +39,13 @@ uint8_t FreqEntry_Append(char ch)
     return 1U;
 }
 
+void FreqEntry_Backspace(void)
+{
+    if (menu.freq_input_len != 0U)
+        menu.freq_input[--menu.freq_input_len] = '\0';
+    menu.need_redraw = 1U;
+}
+
 void FreqEntry_Format(char *text)
 {
     uint8_t i;

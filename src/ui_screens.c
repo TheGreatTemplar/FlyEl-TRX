@@ -14,6 +14,7 @@
 #include "ui_settings.h"
 #include "text_utils.h"
 #include "freq_entry.h"
+#include "ui_layout.h"
 
 /* Одинаковый шрифт и плоский фон по фактической ширине SET: и введённых символов. */
 static void DrawFrequencyEntry(void)
@@ -107,27 +108,21 @@ static void DrawMainScreen(void)
     key_name = StatusUI_Header();
     band_name = (menu.rf_hz >= bands[menu.band_index].min_hz && menu.rf_hz <= bands[menu.band_index].max_hz)
                 ? bands[menu.band_index].name : "GEN";
-    band_x = FrequencyUI_MainLeftX(menu.rf_hz);
+    band_x = UI_LABEL_X;
+    /* Длинная рамка режима имеет приоритет; частота и диагностика не двигают диапазон. */
+    if (band_x < (uint8_t)(tx_width + mode_width + 2U))
+        band_x = (uint8_t)(tx_width + mode_width + 2U);
     /* Длинные RTTY-R/CW-R не должны перекрывать диапазон и диагностическую строку. */
     if (*key_name != '\0')
     {
         uint8_t band_width = LCD_GetText5x7Width(band_name, 1U);
         uint8_t key_width = LCD_GetText5x7Width(key_name, 1U);
-        uint8_t max_band_x = (uint8_t)(LCD_WIDTH - step_width - band_width - key_width - 4U);
-        if (band_x > max_band_x)
-        {
-            band_x = max_band_x;
-        }
-        if (band_x < (uint8_t)(tx_width + mode_width + 2U))
-            band_x = (uint8_t)(tx_width + mode_width + 2U);
         if ((uint16_t)band_x + band_width + key_width + 4U <= LCD_WIDTH - step_width)
         {
             LCD_Print5x7((uint8_t)(band_x + band_width + 2U), 2U, key_name, 1U, CH_UNINVERT);
             header_fits = 1U;
         }
     }
-    if (band_x < (uint8_t)(tx_width + mode_width + 2U))
-        band_x = (uint8_t)(tx_width + mode_width + 2U);
     LCD_Print5x7(band_x, 2U, band_name, 1U, CH_UNINVERT);
     LCD_Print5x7((uint8_t)(LCD_WIDTH - step_width), 2U, step_text, 1U, CH_UNINVERT);
 
@@ -149,16 +144,7 @@ static void DrawMainScreen(void)
     if (menu.freq_input_active == 0U)
     {
         const char *label = (RadioVfo_Active() == 0U) ? "VFOB" : "VFOA";
-        uint8_t freq_x;
-        uint8_t label_x;
-        uint8_t label_width;
-
-        freq_x = FrequencyUI_SecondLeftX(RadioVfo_OtherHz());
-        label_width = LCD_GetText5x7Width(label, 1U);
-        /* The frequency digit has one empty leading column. */
-        label_x = (freq_x >= label_width) ? (uint8_t)(freq_x - label_width) : 0U;
-
-        LCD_Print5x7(label_x, 33U, label, 1U, CH_UNINVERT);
+        LCD_Print5x7(UI_LABEL_X, 33U, label, 1U, CH_UNINVERT);
         FrequencyUI_DrawSecond(RadioVfo_OtherHz(), 30U);
     }
 
