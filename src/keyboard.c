@@ -15,6 +15,10 @@
 static key_gesture_t gestures[27];
 static uint8_t suppressed[27];
 static uint8_t service_chord_latched;
+static uint32_t service_chord_tick;
+
+/* Тик 500 мкс: вход после 5 секунд непрерывного совместного удержания. */
+#define SERVICE_CHORD_HOLD_TICKS 10000U
 
 void Keyboard_Init(void)
 {
@@ -139,11 +143,23 @@ void Keyboard_Task(input_key_t pressed)
     uint8_t i;
     uint32_t now = App_GetTick500us();
     uint8_t stopped_scan = 0U;
-    /* Сочетание проверяем до одиночных жестов. Ждём отпускания обеих кнопок,
-     * чтобы оставшийся SET/FILTER и очередь нажатий не выполнили команду. */
+    /* 0 — ожидание сочетания, 1 — отсчёт 5 с, 2 — ожидание отпускания обеих.
+     * Раннее отпускание отменяет вход и не запускает одиночные SET/FILTER. */
     if (service_chord_latched != 0U)
     {
-        if (Input_KeyIsDown(Key_6_3) == 0U && Input_KeyIsDown(Key_10_2) == 0U)
+        uint8_t set_down = Input_KeyIsDown(Key_6_3);
+        uint8_t filter_down = Input_KeyIsDown(Key_10_2);
+        if (service_chord_latched == 1U)
+        {
+            if (set_down == 0U || filter_down == 0U || menu.tx_active != 0U)
+                service_chord_latched = 2U;
+            else if ((uint32_t)(now - service_chord_tick) >= SERVICE_CHORD_HOLD_TICKS)
+            {
+                service_chord_latched = 2U;
+                (void)Settings_OpenService();
+            }
+        }
+        if (set_down == 0U && filter_down == 0U)
             service_chord_latched = 0U;
         return;
     }
@@ -153,8 +169,8 @@ void Keyboard_Task(input_key_t pressed)
         uint8_t filter_index = (uint8_t)((uint8_t)Key_10_2 - (uint8_t)Key_2_1);
         suppressed[set_index] = 1U; suppressed[filter_index] = 1U;
         gestures[set_index].active = 0U; gestures[filter_index].active = 0U;
-        service_chord_latched = 1U;
-        if (Settings_Page() != 3U) (void)Settings_OpenService();
+        service_chord_tick = now;
+        service_chord_latched = (menu.tx_active == 0U && Settings_Page() != 3U) ? 1U : 2U;
         return;
     }
     if (pressed >= Key_2_1 && pressed < INPUT_KEY_COUNT && pressed != Key_4_2 && Scan_Active() != 0U)

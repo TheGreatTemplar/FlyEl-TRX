@@ -1,11 +1,17 @@
 /* Сочетание, отпускание клавиш и всё дерево SERVICE проверяются реальным Thumb-кодом. */
 #include "controls_arm.c"
 
-static void ServiceChord(input_key_t first, input_key_t second)
+static void PressServiceChord(input_key_t first, input_key_t second)
 {
     key_down[first] = 1U; Keyboard_Task(first);
     now_tick += 100U;
     key_down[second] = 1U; Keyboard_Task(second);
+}
+
+static void ServiceChord(input_key_t first, input_key_t second)
+{
+    PressServiceChord(first, second);
+    now_tick += 10000U; Keyboard_Task(INPUT_KEY_COUNT);
 }
 
 static void ReleaseServiceChord(input_key_t first, input_key_t second)
@@ -13,6 +19,53 @@ static void ReleaseServiceChord(input_key_t first, input_key_t second)
     key_down[first] = 0U; Keyboard_Task(INPUT_KEY_COUNT);
     key_down[second] = 0U; Keyboard_Task(INPUT_KEY_COUNT);
     Keyboard_Task(INPUT_KEY_COUNT);
+}
+
+int test_service_chord_requires_five_seconds_from_second_button(void)
+{
+    uint8_t order;
+    for (order = 0U; order < 2U; order++)
+    {
+        input_key_t first = (order == 0U) ? Key_6_3 : Key_10_2;
+        input_key_t second = (order == 0U) ? Key_10_2 : Key_6_3;
+        InitControls(); PressServiceChord(first, second);
+        CHECK(Settings_Page() == 0U);
+        now_tick += 9999U; Keyboard_Task(INPUT_KEY_COUNT);
+        CHECK(Settings_Page() == 0U && RadioVfo_Filter() == 0U && panel.meter == 0U);
+        now_tick++; Keyboard_Task(INPUT_KEY_COUNT);
+        CHECK(Settings_Page() == 3U && Service_Stage() == SERVICE_ROOT);
+        now_tick += 40000U; Keyboard_Task(INPUT_KEY_COUNT);
+        CHECK(Service_Stage() == SERVICE_ROOT);
+        ReleaseServiceChord(first, second);
+    }
+    return 0;
+}
+
+int test_service_short_chord_cancel_repress_and_timer_wrap(void)
+{
+    InitControls(); PressServiceChord(Key_6_3, Key_10_2);
+    now_tick += 9999U; key_down[Key_6_3] = 0U; Keyboard_Task(INPUT_KEY_COUNT);
+    now_tick += 20000U; key_down[Key_6_3] = 1U; Keyboard_Task(Key_6_3);
+    CHECK(Settings_Page() == 0U); /* Без отпускания обеих новый отсчёт не запускается. */
+    ReleaseServiceChord(Key_6_3, Key_10_2);
+    CHECK(panel.meter == 0U && RadioVfo_Filter() == 0U);
+    now_tick = 0xFFFFFF00U; PressServiceChord(Key_10_2, Key_6_3);
+    now_tick += 9999U; Keyboard_Task(INPUT_KEY_COUNT); CHECK(Settings_Page() == 0U);
+    now_tick++; Keyboard_Task(INPUT_KEY_COUNT); CHECK(Settings_Page() == 3U);
+    ReleaseServiceChord(Key_10_2, Key_6_3);
+    return 0;
+}
+
+int test_service_tx_during_hold_cancels_entry_until_full_release(void)
+{
+    InitControls(); PressServiceChord(Key_6_3, Key_10_2);
+    now_tick += 4000U; menu.tx_active = 1U; Keyboard_Task(INPUT_KEY_COUNT);
+    menu.tx_active = 0U; now_tick += 10000U; Keyboard_Task(INPUT_KEY_COUNT);
+    CHECK(Settings_Page() == 0U);
+    ReleaseServiceChord(Key_6_3, Key_10_2);
+    ServiceChord(Key_6_3, Key_10_2); CHECK(Settings_Page() == 3U);
+    ReleaseServiceChord(Key_6_3, Key_10_2);
+    return 0;
 }
 
 int test_service_chord_both_orders_and_release_suppress_single_actions(void)
