@@ -45,6 +45,8 @@ void LCD_PrintDigits10x15(uint8_t x, uint8_t y, const char *text, uint8_t spacin
 uint8_t LCD_GetDigits10x15Width(const char *text, uint8_t spacing);
 
 void LCD_DrawDigit7x11(uint8_t x, uint8_t y, uint8_t symbol, uint8_t invert);
+/* Отдельный жирный шрифт номера канала, размер 8x9 пикселей, цифры 0..9. */
+void LCD_DrawDigit8x9(uint8_t x, uint8_t y, uint8_t symbol, uint8_t invert);
 void LCD_PrintDigits7x11(uint8_t x, uint8_t y, const char *text, uint8_t spacing, uint8_t invert);
 
 void LCD_DrawDigit10x19(uint8_t x, uint8_t y, uint8_t symbol, uint8_t invert);

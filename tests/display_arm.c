@@ -73,7 +73,7 @@ int test_display_memory_blink_keeps_two_digit_channel_and_status_fixed(void)
             memcpy(before, lcd_buffer, sizeof(before));
             now_tick = 1000U; Screens_Redraw();
             memo_on = 0U; memo_off = 0U;
-            for (y = 44U; y < 51U; y++)
+            for (y = 43U; y < 52U; y++)
             {
                 for (x = 0U; x < 128U; x++)
                 {
@@ -84,13 +84,15 @@ int test_display_memory_blink_keeps_two_digit_channel_and_status_fixed(void)
             }
             CHECK(memo_on != 0U && memo_off == 0U);
             Text_Append(expected, labels[i]);
-            LCD_ClearBuffer(); LCD_Print5x7(73U, 44U, expected, 1U, CH_UNINVERT);
+            LCD_ClearBuffer();
+            LCD_DrawDigit8x9(111U, 43U, (uint8_t)expected[0], CH_UNINVERT);
+            LCD_DrawDigit8x9(120U, 43U, (uint8_t)expected[1], CH_UNINVERT);
             if (occupied == 0U)
             {
-                LCD_FillRectangle(87U, 43U, 29U, 8U, PX_ON);
-                LCD_Print5x7(88U, 44U, "BLANK", 1U, CH_INVERT);
+                LCD_FillRectangle(73U, 43U, 29U, 8U, PX_ON);
+                LCD_Print5x7(74U, 44U, "BLANK", 1U, CH_INVERT);
             }
-            for (y = 44U; y < 51U; y++)
+            for (y = 43U; y < 52U; y++)
                 for (x = 70U; x < 128U; x++)
                     CHECK(((before[(y / 8U) * 128U + x] >> (y % 8U)) & 1U) == Pixel(x, y));
         }
@@ -136,9 +138,9 @@ int test_display_filter_hidden_in_memory_with_or_without_channel_selection(void)
     InitControls(); test_eeprom_message = "";
     MemoryControl_ToggleMode(); Screens_Redraw();
     CHECK(MatchesText(47U, 44U, "MEMO") != 0U);
-    CHECK(MatchesText(73U, 44U, "01") != 0U);
-    CHECK(Pixel(87U, 43U) != 0U && Pixel(116U, 51U) != 0U);
-    CHECK(MatchesText(117U, 44U, "  ") != 0U);
+    CHECK(Pixel(112U, 43U) != 0U && Pixel(123U, 43U) != 0U);
+    CHECK(Pixel(73U, 43U) != 0U && Pixel(102U, 51U) != 0U);
+    CHECK(MatchesText(103U, 44U, "  ") != 0U);
     MemoryControl_ToggleMode(); Screens_Redraw();
     CHECK(MatchesText(47U, 44U, "F1") != 0U);
     return 0;

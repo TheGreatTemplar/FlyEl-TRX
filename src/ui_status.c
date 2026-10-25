@@ -43,10 +43,11 @@ void StatusUI_Draw(void)
          * с постоянной координатой, чтобы мигание не сдвигало остаток строки. */
         if (MemoryControl_Selecting() == 0U || (App_GetTick500us() / 1000U) % 2U == 0U)
             LCD_Print5x7(text_x, 44U, "MEMO", 1U, CH_UNINVERT);
-        text_x = (uint8_t)(text_x + LCD_GetText5x7Width("MEMO", 1U) + 3U);
         Text_U32ToDec(number, (uint32_t)MemoryControl_Channel() + 1U, 2U);
-        LCD_Print5x7(text_x, 44U, number, 1U, CH_UNINVERT);
-        text_x = (uint8_t)(text_x + LCD_GetText5x7Width(number, 1U) + 4U);
+        LCD_DrawDigit8x9(UI_CHANNEL_X, UI_CHANNEL_Y, (uint8_t)number[0], CH_UNINVERT);
+        LCD_DrawDigit8x9((uint8_t)(UI_CHANNEL_X + 9U), UI_CHANNEL_Y, (uint8_t)number[1], CH_UNINVERT);
+        /* WAIT/BLANK между MEMO и закреплённым справа номером. */
+        text_x = UI_MEMORY_STATUS_X;
         if (MemoryStore_Ready() == 0U) LCD_Print5x7(text_x, 44U, "WAIT", 1U, CH_UNINVERT);
         else if (MemoryControl_Blank() != 0U)
         {

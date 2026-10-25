@@ -2,6 +2,27 @@
 #include "gmg12864.h"
 #include "font_terminus_7x11_digi.h"
 #include "font_meter_4x6.h"
+#include "font_channel_bold_8x9.h"
+
+/* Жирная цифра 8x9 в framebuffer; вызов из основного цикла, координаты в пикселях. */
+void LCD_DrawDigit8x9(uint8_t x, uint8_t y, uint8_t symbol, uint8_t invert)
+{
+    uint8_t row, col;
+    if (symbol < (uint8_t)'0' || symbol > (uint8_t)'9') return;
+    for (row = 0U; row < FONT_CHANNEL_BOLD_HEIGHT; row++)
+    {
+        uint8_t bits = font_channel_bold_8x9[symbol - (uint8_t)'0'][row];
+        for (col = 0U; col < FONT_CHANNEL_BOLD_WIDTH; col++)
+        {
+            if ((uint16_t)x + col < LCD_WIDTH && (uint16_t)y + row < LCD_HEIGHT)
+            {
+                uint8_t on = (uint8_t)((bits >> (7U - col)) & 1U);
+                LCD_DrawPixel((uint8_t)(x + col), (uint8_t)(y + row),
+                              (uint8_t)(on ^ ((invert & CH_INVERT) != 0U)));
+            }
+        }
+    }
+}
 
 static uint8_t LCD_FindSymbol7x11(uint8_t symbol,
                                  uint16_t *symbol_offset,
