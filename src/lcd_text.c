@@ -1,7 +1,7 @@
 /* Текст Tahoma и 5x7; состояние межсимвольного интервала принадлежит этому модулю. */
 #include "gmg12864.h"
-#include "font_tahoma_8_prop.h"
-#include "font_status_5x7.h"
+#include "../font/font_tahoma_8_prop.h"
+#include "../font/font_status_5x7.h"
 
 static uint8_t lcd_char_spacing;
 

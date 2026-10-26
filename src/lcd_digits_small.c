@@ -1,8 +1,8 @@
 /* Цифровые растры второго VFO и шкалы S-метра. */
 #include "gmg12864.h"
-#include "font_terminus_7x11_digi.h"
-#include "font_meter_4x6.h"
-#include "font_channel_bold_8x9.h"
+#include "../font/font_terminus_7x11_digi.h"
+#include "../font/font_meter_4x6.h"
+#include "../font/font_channel_bold_8x9.h"
 
 /* Жирная цифра 8x9 в framebuffer; вызов из основного цикла, координаты в пикселях. */
 void LCD_DrawDigit8x9(uint8_t x, uint8_t y, uint8_t symbol, uint8_t invert)

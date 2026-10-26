@@ -21,7 +21,8 @@ The design is evolving; specifications and interfaces may change after prototype
 
 | Directory | Purpose |
 | --- | --- |
-| `src/`, `font/` | MCU source modules and bitmap fonts |
+| `src/` | MCU source modules |
+| [`font/`](font/) | Current and historical bitmap fonts; [font catalog](font/README.md) |
 | `firmware/` | Build, flashing, architecture and pinout documentation |
 | `scripts/`, `tests/` | Portable build and logic checks |
 | [`hardware/`](hardware/) | Schematics, PCBs, assembly and BOM; [relay and I/O map](hardware/CONTROL_MAP.md) |

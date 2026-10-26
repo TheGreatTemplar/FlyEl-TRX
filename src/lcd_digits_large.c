@@ -1,7 +1,7 @@
 /* Крупные цифровые шрифты: Terminus и отдельные растры SW2019 17/15. */
 #include "gmg12864.h"
-#include "font_terminus_15_digi.h"
-#include "font_terminus_10x19_digi.h"
+#include "../font/font_terminus_15_digi.h"
+#include "../font/font_terminus_10x19_digi.h"
 #include "../font/font_sw2019_refined_digi.h"
 
 static uint8_t LCD_FindSymbol10x15(uint8_t symbol,

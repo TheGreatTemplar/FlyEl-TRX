@@ -416,22 +416,22 @@
             <File>
               <FileName>font_tahoma_8_prop.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\src\font_tahoma_8_prop.h</FilePath>
+              <FilePath>.\font\font_tahoma_8_prop.h</FilePath>
             </File>
             <File>
               <FileName>font_terminus_15_digi.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\src\font_terminus_15_digi.h</FilePath>
+              <FilePath>.\font\font_terminus_15_digi.h</FilePath>
             </File>
             <File>
               <FileName>font_terminus_10x17_digi.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\src\font_terminus_10x17_digi.h</FilePath>
+              <FilePath>.\font\font_terminus_10x17_digi.h</FilePath>
             </File>
             <File>
               <FileName>font_meter_4x6.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\src\font_meter_4x6.h</FilePath>
+              <FilePath>.\font\font_meter_4x6.h</FilePath>
             </File>
             <File>
               <FileName>font_sw2019_refined_digi.h</FileName>
@@ -451,7 +451,7 @@
             <File>
               <FileName>font_status_5x7.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\src\font_status_5x7.h</FilePath>
+              <FilePath>.\font\font_status_5x7.h</FilePath>
             </File>
             <File>
               <FileName>adc1_app.c</FileName>
@@ -576,12 +576,12 @@
             <File>
               <FileName>font_terminus_10x19_digi.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\src\font_terminus_10x19_digi.h</FilePath>
+              <FilePath>.\font\font_terminus_10x19_digi.h</FilePath>
             </File>
             <File>
               <FileName>font_terminus_7x11_digi.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\src\font_terminus_7x11_digi.h</FilePath>
+              <FilePath>.\font\font_terminus_7x11_digi.h</FilePath>
             </File>
             <File>
               <FileName>freq_entry.c</FileName>
