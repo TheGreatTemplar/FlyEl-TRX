@@ -29,6 +29,7 @@ static void FormatMainFrequency(char *large, char *small, uint32_t hz)
     Text_U32ToDec(small, (hz / 10UL) % 100UL, 2U);
 }
 
+
 static uint8_t GetMainLargeWidth(const char *text)
 {
     uint8_t width;
@@ -60,6 +61,7 @@ static uint8_t GetMainLargeWidth(const char *text)
     return width;
 }
 
+
 static uint8_t DrawMainLargeFrequency(uint8_t x, uint8_t y, const char *text)
 {
     uint8_t symbol_width;
@@ -84,6 +86,7 @@ static uint8_t DrawMainLargeFrequency(uint8_t x, uint8_t y, const char *text)
     return x;
 }
 
+
 static uint8_t GetSW2019FrequencyWidth(const char *text)
 {
     uint8_t width = 0U;
@@ -102,6 +105,7 @@ static uint8_t GetSW2019FrequencyWidth(const char *text)
     }
     return width;
 }
+
 
 static void DrawSW2019Frequency(uint8_t x, uint8_t y, const char *text)
 {
@@ -126,6 +130,7 @@ static void DrawSW2019Frequency(uint8_t x, uint8_t y, const char *text)
         text++;
     }
 }
+
 
 /* Вычисляет левую координату основной частоты для выравнивания вправо. */
 uint8_t FrequencyUI_MainLeftX(uint32_t hz)
@@ -167,6 +172,7 @@ uint8_t FrequencyUI_MainLeftX(uint32_t hz)
     return 0U;
 }
 
+
 /* Рисует основную частоту; SW2019 использует высоты 17/15 пикселей. */
 void FrequencyUI_DrawMain(uint32_t hz, uint8_t y)
 {
@@ -194,10 +200,12 @@ void FrequencyUI_DrawMain(uint32_t hz, uint8_t y)
     LCD_PrintDigits10x15(small_x, (uint8_t)(y + 4U), small, 1U, CH_UNINVERT);
 }
 
+
 static uint8_t VfoBGlyphWidth(char ch, uint8_t dots)
 {
     return (ch == '.') ? 2U : ((dots >= 2U) ? 5U : 7U);
 }
+
 
 static uint8_t VfoBGlyphGap(char current, char next, uint8_t dots)
 {
@@ -215,6 +223,7 @@ static uint8_t VfoBGlyphGap(char current, char next, uint8_t dots)
     }
     return (dots >= 2U) ? 1U : 0U;
 }
+
 
 static uint8_t GetVfoBFrequencyWidth(uint32_t hz)
 {
@@ -237,12 +246,14 @@ static uint8_t GetVfoBFrequencyWidth(uint32_t hz)
     return width;
 }
 
+
 /* Вычисляет левую координату строки второго VFO. */
 uint8_t FrequencyUI_SecondLeftX(uint32_t hz)
 {
     uint8_t width = GetVfoBFrequencyWidth(hz);
     return (width < LCD_WIDTH) ? (uint8_t)(LCD_WIDTH - width) : 0U;
 }
+
 
 /* Рисует VFO B: старшие разряды 7x11, последние два — 5x7. */
 void FrequencyUI_DrawSecond(uint32_t hz, uint8_t y)
@@ -279,6 +290,7 @@ void FrequencyUI_DrawSecond(uint32_t hz, uint8_t y)
     }
 }
 
+
 static void FormatRfKHzParts(char *value, char *unit, uint32_t hz)
 {
     char part[12];
@@ -302,6 +314,7 @@ static void FormatRfKHzParts(char *value, char *unit, uint32_t hz)
     unit[2] = 'z';
     unit[3] = '\0';
 }
+
 
 /* Рисует числовую частоту в кГц для сервисного меню. */
 void FrequencyUI_DrawKHz(uint8_t x, uint8_t y, uint32_t hz, uint8_t invert)
@@ -333,6 +346,7 @@ void FrequencyUI_DrawKHz(uint8_t x, uint8_t y, uint32_t hz, uint8_t invert)
         LCD_Print(92U, y, unit, 1U, invert);
     }
 }
+
 
 /* Форматирует выбранную ПЧ в МГц для экрана меню. */
 void FrequencyUI_FormatIF(char *buf)

@@ -24,7 +24,7 @@ typedef struct
  * repeat разрешается только для UP/DOWN: сразу короткое событие, повтор через
  * 600 мс с периодом 200 мс; один вызов выдаёт не более одного события.
  * Обработчик команды исключает повтор переключения диапазонов. */
-key_gesture_event_t KeyGesture_Update(key_gesture_t *state, uint8_t down,
-                                      uint8_t pressed, uint8_t repeat, uint32_t now);
+key_gesture_event_t KeyGesture_Update(key_gesture_t *state, uint8_t down, uint8_t pressed, uint8_t repeat,
+                                      uint32_t now);
 
 #endif

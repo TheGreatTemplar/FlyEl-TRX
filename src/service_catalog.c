@@ -1,8 +1,7 @@
 /* Каталог из FLyEl Service Menu Engineering Spec V1.0. Стабильные ID SSNN. */
 #include "service_catalog.h"
 
-const service_section_t service_sections[SERVICE_SECTION_COUNT] =
-{
+const service_section_t service_sections[SERVICE_SECTION_COUNT] = {
     {"SYSTEM", 0U, 9U, 1U},
     {"SYNTH", 9U, 12U, 2U},
     {"LO CAL", 21U, 11U, 3U},
@@ -22,8 +21,7 @@ const service_section_t service_sections[SERVICE_SECTION_COUNT] =
     {"SERVICE DATA", 182U, 10U, 17U},
 };
 
-const service_item_t service_items[SERVICE_ITEM_COUNT] =
-{
+const service_item_t service_items[SERVICE_ITEM_COUNT] = {
     {"HW VERSION", 101U, SERVICE_READ_ONLY, 0U},
     {"FW VERSION", 102U, SERVICE_READ_ONLY, 0U},
     {"SERIAL NUMBER", 103U, SERVICE_TEXT, 0U},
@@ -220,8 +218,7 @@ const service_item_t service_items[SERVICE_ITEM_COUNT] =
 
 const char *ServiceCatalog_TypeName(uint8_t type)
 {
-    static const char *const names[] = {
-        "READ ONLY", "ENUM", "VALUE", "TEXT", "TABLE", "TEST", "ACTION", "MONITOR", "BOOL"
-    };
+    static const char *const names[] = {"READ ONLY", "ENUM",   "VALUE",   "TEXT", "TABLE",
+                                        "TEST",      "ACTION", "MONITOR", "BOOL"};
     return (type < sizeof(names) / sizeof(names[0])) ? names[type] : "UNKNOWN";
 }

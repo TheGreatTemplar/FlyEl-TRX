@@ -25,6 +25,7 @@ void Widgets_MenuLine(uint8_t y, const char *left, const char *right, uint8_t se
     }
 }
 
+
 static void ClearBoxCorners(uint8_t x, uint8_t y, uint8_t width, uint8_t height)
 {
     if ((width == 0U) || (height == 0U))
@@ -38,6 +39,7 @@ static void ClearBoxCorners(uint8_t x, uint8_t y, uint8_t width, uint8_t height)
     LCD_DrawPixel((uint8_t)(x + width - 1U), (uint8_t)(y + height - 1U), PX_OFF);
 }
 
+
 static void DrawFrameNoCorners(uint8_t x, uint8_t y, uint8_t width, uint8_t height)
 {
     if ((width < 2U) || (height < 2U))
@@ -46,10 +48,13 @@ static void DrawFrameNoCorners(uint8_t x, uint8_t y, uint8_t width, uint8_t heig
     }
 
     LCD_DrawLine((uint8_t)(x + 1U), y, (uint8_t)(x + width - 2U), y, PX_ON);
-    LCD_DrawLine((uint8_t)(x + 1U), (uint8_t)(y + height - 1U), (uint8_t)(x + width - 2U), (uint8_t)(y + height - 1U), PX_ON);
+    LCD_DrawLine((uint8_t)(x + 1U), (uint8_t)(y + height - 1U), (uint8_t)(x + width - 2U), (uint8_t)(y + height - 1U),
+                 PX_ON);
     LCD_DrawLine(x, (uint8_t)(y + 1U), x, (uint8_t)(y + height - 2U), PX_ON);
-    LCD_DrawLine((uint8_t)(x + width - 1U), (uint8_t)(y + 1U), (uint8_t)(x + width - 1U), (uint8_t)(y + height - 2U), PX_ON);
+    LCD_DrawLine((uint8_t)(x + width - 1U), (uint8_t)(y + 1U), (uint8_t)(x + width - 1U), (uint8_t)(y + height - 2U),
+                 PX_ON);
 }
+
 
 /* Рисует подпись 5x7: по одному пустому пикселю внутри рамки с каждой стороны. */
 uint8_t Widgets_Label(uint8_t x, uint8_t y, const char *text, uint8_t invert)
@@ -76,10 +81,8 @@ uint8_t Widgets_Label(uint8_t x, uint8_t y, const char *text, uint8_t invert)
         LCD_Print5x7(text_x, (uint8_t)(y + 2U), text, 1U, CH_INVERT);
 
         /* Keep a blank column and row outside the inverted badge. */
-        LCD_DrawLine((uint8_t)(x + box_width), y,
-                     (uint8_t)(x + box_width), (uint8_t)(y + box_height - 1U), PX_OFF);
-        LCD_DrawLine(x, (uint8_t)(y + box_height),
-                     (uint8_t)(x + box_width - 1U), (uint8_t)(y + box_height), PX_OFF);
+        LCD_DrawLine((uint8_t)(x + box_width), y, (uint8_t)(x + box_width), (uint8_t)(y + box_height - 1U), PX_OFF);
+        LCD_DrawLine(x, (uint8_t)(y + box_height), (uint8_t)(x + box_width - 1U), (uint8_t)(y + box_height), PX_OFF);
     }
     else
     {
@@ -89,6 +92,7 @@ uint8_t Widgets_Label(uint8_t x, uint8_t y, const char *text, uint8_t invert)
 
     return box_width;
 }
+
 
 /* Рисует обычную рамку для SPLIT/RIT. */
 uint8_t Widgets_CompactLabel(uint8_t x, uint8_t y, const char *text)
@@ -108,6 +112,7 @@ uint8_t Widgets_CompactLabel(uint8_t x, uint8_t y, const char *text)
 
     return box_width;
 }
+
 
 static void FormatGainLabel(char *buf)
 {
@@ -138,6 +143,7 @@ static void FormatGainLabel(char *buf)
     Text_Append(buf, part);
     Text_Append(buf, "dB");
 }
+
 
 /* Рисует текущую подпись усиления/ATT; аппаратное управление пока не подключено. */
 void Widgets_Gain(uint8_t x, uint8_t y)

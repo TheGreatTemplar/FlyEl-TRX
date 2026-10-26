@@ -15,8 +15,7 @@ void Text_U32ToDec(char *buf, uint32_t value, uint8_t min_digits)
         tmp[i] = (char)('0' + (value % 10U));
         value /= 10U;
         i++;
-    }
-    while ((value != 0U) && (i < sizeof(tmp)));
+    } while ((value != 0U) && (i < sizeof(tmp)));
 
     while ((i < min_digits) && (i < sizeof(tmp)))
     {
@@ -31,6 +30,7 @@ void Text_U32ToDec(char *buf, uint32_t value, uint8_t min_digits)
 
     buf[i] = '\0';
 }
+
 
 /* Добавляет строку к уже завершённому нулём буферу; ёмкость проверяет вызывающий код. */
 void Text_Append(char *dst, const char *src)

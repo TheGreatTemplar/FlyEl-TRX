@@ -29,12 +29,14 @@ static void DrawFrequencyEntry(void)
     FreqEntry_Format(value);
     Text_Append(text, value);
     width = (uint8_t)(LCD_GetText5x7Width(text, 1U) + 4U);
-    if ((uint16_t)x + width > LCD_WIDTH) x = (uint8_t)(LCD_WIDTH - width);
+    if ((uint16_t)x + width > LCD_WIDTH)
+        x = (uint8_t)(LCD_WIDTH - width);
     /* Номер канала начинается с y=42: оставляем пустую строку y=41 перед ним. */
     LCD_FillRectangle(x, 30U, (uint8_t)(width - 1U), 10U, PX_ON);
     LCD_Print5x7((uint8_t)(x + 2U), 32U, text, 1U, CH_INVERT);
     LCD_Print5x7(0U, 56U, "F-INP:OK HOLD:CANCEL", 1U, CH_UNINVERT);
 }
+
 
 static void FormatTopStep(char *buf)
 {
@@ -81,6 +83,7 @@ static void FormatTopStep(char *buf)
     }
 }
 
+
 /* Собирает основной экран; координаты сохраняют проверенную на макете разметку. */
 static void DrawMainScreen(void)
 {
@@ -108,7 +111,8 @@ static void DrawMainScreen(void)
     step_width = LCD_GetText5x7Width(step_text, 1U);
     key_name = StatusUI_Header();
     band_name = (menu.rf_hz >= bands[menu.band_index].min_hz && menu.rf_hz <= bands[menu.band_index].max_hz)
-                ? bands[menu.band_index].name : "GEN";
+                    ? bands[menu.band_index].name
+                    : "GEN";
     band_x = UI_LABEL_X;
     /* Длинная рамка режима имеет приоритет; частота и диагностика не двигают диапазон. */
     if (band_x < (uint8_t)(tx_width + mode_width + 2U))
@@ -133,7 +137,7 @@ static void DrawMainScreen(void)
     /* 11-pixel frames, separated by one blank row. */
     (void)Widgets_Label(0U, 24U, "SPLIT", RadioVfo_Split());
     {
-        static const char *const meter[] = { "PO", "ALC", "SWR" };
+        static const char *const meter[] = {"PO", "ALC", "SWR"};
         (void)Widgets_CompactLabel(0U, 36U, meter[panel.meter]);
     }
 
@@ -170,6 +174,7 @@ static void DrawMainScreen(void)
 
     LCD_Update();
 }
+
 
 /* Рисует текущий экран и сбрасывает запрос перерисовки. */
 void Screens_Redraw(void)

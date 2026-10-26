@@ -11,13 +11,14 @@ void TS_Button_Init(ts_button_t *button, uint32_t step_hz)
     button->reserved[1] = 0U;
 }
 
+
 /* Различает короткое нажатие и удержание >1 с; одно удержание выполняет одно действие. */
-uint32_t TS_Button_Update(ts_button_t *button, uint8_t down, uint8_t pressed,
-                          uint32_t now, uint32_t step_hz)
+uint32_t TS_Button_Update(ts_button_t *button, uint8_t down, uint8_t pressed, uint32_t now, uint32_t step_hz)
 {
     if (button->active == 0U)
     {
-        if (pressed == 0U) return step_hz;
+        if (pressed == 0U)
+            return step_hz;
         button->active = 1U;
         button->handled = 0U;
         button->press_tick = now;
@@ -42,9 +43,12 @@ uint32_t TS_Button_Update(ts_button_t *button, uint8_t down, uint8_t pressed,
     {
         if (button->handled == 0U)
         {
-            if (step_hz == 10U) step_hz = 100U;
-            else if (step_hz == 100U) step_hz = 1000U;
-            else step_hz = 10U;
+            if (step_hz == 10U)
+                step_hz = 100U;
+            else if (step_hz == 100U)
+                step_hz = 1000U;
+            else
+                step_hz = 10U;
         }
         button->active = 0U;
     }

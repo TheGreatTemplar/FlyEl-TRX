@@ -7,12 +7,12 @@
  * PB7 = SDA
  */
 
-#define I2C_GPIO                    GPIOB
-#define I2C_SCL_PIN                 6U
-#define I2C_SDA_PIN                 7U
+#define I2C_GPIO GPIOB
+#define I2C_SCL_PIN 6U
+#define I2C_SDA_PIN 7U
 
-#define I2C_SCL_MASK                (1UL << I2C_SCL_PIN)
-#define I2C_SDA_MASK                (1UL << I2C_SDA_PIN)
+#define I2C_SCL_MASK (1UL << I2C_SCL_PIN)
+#define I2C_SDA_MASK (1UL << I2C_SDA_PIN)
 
 static void I2C_Delay(void)
 {
@@ -23,6 +23,7 @@ static void I2C_Delay(void)
         __NOP();
     }
 }
+
 
 static void GPIO_ConfigOpenDrainOutput(GPIO_TypeDef *gpio, uint8_t pin)
 {
@@ -45,28 +46,33 @@ static void GPIO_ConfigOpenDrainOutput(GPIO_TypeDef *gpio, uint8_t pin)
      * CNF  = 01: open-drain.
      */
     *reg &= ~(0xFUL << shift);
-    *reg |=  (0x6UL << shift);
+    *reg |= (0x6UL << shift);
 }
+
 
 static void SCL_High(void)
 {
     I2C_GPIO->BSRR = I2C_SCL_MASK;
 }
 
+
 static void SCL_Low(void)
 {
     I2C_GPIO->BRR = I2C_SCL_MASK;
 }
+
 
 static void SDA_High(void)
 {
     I2C_GPIO->BSRR = I2C_SDA_MASK;
 }
 
+
 static void SDA_Low(void)
 {
     I2C_GPIO->BRR = I2C_SDA_MASK;
 }
+
 
 static uint8_t SDA_Read(void)
 {
@@ -77,6 +83,7 @@ static uint8_t SDA_Read(void)
 
     return 0U;
 }
+
 
 /* Освобождает программную I2C1 на PB6/PB7; внешние подтяжки обязательны. */
 void I2C_Soft_Init(void)
@@ -91,6 +98,7 @@ void I2C_Soft_Init(void)
     I2C_Delay();
 }
 
+
 static void I2C_Start(void)
 {
     SDA_High();
@@ -104,6 +112,7 @@ static void I2C_Start(void)
     I2C_Delay();
 }
 
+
 static void I2C_Stop(void)
 {
     SDA_Low();
@@ -115,6 +124,7 @@ static void I2C_Stop(void)
     SDA_High();
     I2C_Delay();
 }
+
 
 static uint8_t I2C_WriteByte(uint8_t data)
 {
@@ -159,6 +169,7 @@ static uint8_t I2C_WriteByte(uint8_t data)
 
     return ack;
 }
+
 
 /* Передаёт адрес и буфер; при NACK выдаёт STOP и возвращает ошибку. */
 i2c_soft_status_t I2C_Soft_Write(uint8_t addr7, const uint8_t *data, uint16_t len)

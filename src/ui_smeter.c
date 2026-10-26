@@ -22,12 +22,14 @@ static uint8_t MeterBarsFromMv(uint16_t mv, uint8_t max_bars)
     return (uint8_t)bars;
 }
 
+
 static void DrawMeterPlus3x3(uint8_t x, uint8_t y)
 {
     LCD_DrawPixel((uint8_t)(x + 1U), y, PX_ON);
     LCD_DrawLine(x, (uint8_t)(y + 1U), (uint8_t)(x + 2U), (uint8_t)(y + 1U), PX_ON);
     LCD_DrawPixel((uint8_t)(x + 1U), (uint8_t)(y + 2U), PX_ON);
 }
+
 
 static void DrawMeterLabel(uint8_t index, uint8_t x, uint8_t y)
 {
@@ -83,6 +85,7 @@ static void DrawMeterLabel(uint8_t index, uint8_t x, uint8_t y)
     }
 }
 
+
 static uint8_t MeterLabelWidth(uint8_t index)
 {
     if (index < 5U)
@@ -93,12 +96,10 @@ static uint8_t MeterLabelWidth(uint8_t index)
     return 13U;
 }
 
+
 static void DrawSMeterScale(void)
 {
-    static const uint8_t tick_x[9] =
-    {
-        3U, 20U, 36U, 53U, 69U, 83U, 97U, 110U, 124U
-    };
+    static const uint8_t tick_x[9] = {3U, 20U, 36U, 53U, 69U, 83U, 97U, 110U, 124U};
 
     uint8_t i;
     uint8_t label_width;
@@ -149,22 +150,20 @@ static void DrawSMeterScale(void)
     }
 }
 
+
 static void DrawSMeterTicks(uint8_t baseline_y)
 {
-    static const uint8_t tick_x[9] =
-    {
-        3U, 20U, 36U, 53U, 69U, 83U, 97U, 110U, 124U
-    };
+    static const uint8_t tick_x[9] = {3U, 20U, 36U, 53U, 69U, 83U, 97U, 110U, 124U};
 
     uint8_t i;
 
     /* Two pixels upward from the existing dotted baseline. */
     for (i = 0U; i < 9U; i++)
     {
-        LCD_DrawLine(tick_x[i], (uint8_t)(baseline_y - 2U),
-                     tick_x[i], baseline_y, PX_ON);
+        LCD_DrawLine(tick_x[i], (uint8_t)(baseline_y - 2U), tick_x[i], baseline_y, PX_ON);
     }
 }
+
 
 /* Рисует шкалу и линейную полосу из напряжения ADC0; калибровка S-единиц ещё не введена. */
 void SMeter_Draw(uint16_t mv)
@@ -198,8 +197,8 @@ void SMeter_Draw(uint16_t mv)
         }
         else
         {
-            LCD_DrawLine(x, (uint8_t)(meter_y + bar_h - 1U),
-                         (uint8_t)(x + bar_w - 1U), (uint8_t)(meter_y + bar_h - 1U), PX_ON);
+            LCD_DrawLine(x, (uint8_t)(meter_y + bar_h - 1U), (uint8_t)(x + bar_w - 1U), (uint8_t)(meter_y + bar_h - 1U),
+                         PX_ON);
         }
     }
 

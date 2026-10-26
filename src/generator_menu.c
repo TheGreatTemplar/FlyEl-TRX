@@ -42,6 +42,7 @@ static void UpdateAdc(void)
     }
 }
 
+
 /* Извлекает одно событие клавиатуры; удержание читается отдельно драйвером ввода. */
 static input_key_t GetPressedKey(void)
 {
@@ -58,13 +59,14 @@ static input_key_t GetPressedKey(void)
     return INPUT_KEY_COUNT;
 }
 
+
 /* Инициализирует состояние, синтезатор, TS и стартовую проверку EEPROM. */
 void GeneratorMenu_Init(void)
 {
     si5351_status_t st;
 
     menu.band_index = 8U;
-    menu.step_index = 3U;    /* 100 Hz */
+    menu.step_index = 3U; /* 100 Hz */
     Radio_InitTS();
     menu.if_index = 0U;
     menu.menu_active = 0U;
@@ -113,32 +115,43 @@ void GeneratorMenu_Init(void)
     Screens_Redraw();
 }
 
+
 /* Кооперативный проход: ввод и UI не ждут окончания записи EEPROM. */
 void GeneratorMenu_Task(void)
 {
     int32_t steps;
     input_key_t key;
-    if (EEPROM_TestTask() != 0U) menu.need_redraw = 1U;
-    if (UARTStore_Task() != 0U) menu.need_redraw = 1U;
+    if (EEPROM_TestTask() != 0U)
+        menu.need_redraw = 1U;
+    if (UARTStore_Task() != 0U)
+        menu.need_redraw = 1U;
     MemoryControl_Task();
     UpdateAdc();
     Entry_Task();
     RadioPanel_Task();
     key = GetPressedKey();
     if (key != INPUT_KEY_COUNT)
-    { menu.last_key = key; menu.need_redraw = 1U; }
+    {
+        menu.last_key = key;
+        menu.need_redraw = 1U;
+    }
     Keyboard_Task(key);
     steps = Input_GetEncoderSteps();
     if (steps != 0)
     {
-        if (Scan_Active() != 0U) Scan_Stop();
-        if (Settings_Page() != 0U) Settings_Encoder(steps);
+        if (Scan_Active() != 0U)
+            Scan_Stop();
+        if (Settings_Page() != 0U)
+            Settings_Encoder(steps);
         else if (Entry_Active() == 0U)
         {
-            if (MemoryControl_Selecting() != 0U) MemoryControl_Move(steps);
-            else Radio_TuneSteps(steps);
+            if (MemoryControl_Selecting() != 0U)
+                MemoryControl_Move(steps);
+            else
+                Radio_TuneSteps(steps);
         }
     }
     Scan_Task();
-    if (menu.need_redraw != 0U) Screens_Redraw();
+    if (menu.need_redraw != 0U)
+        Screens_Redraw();
 }

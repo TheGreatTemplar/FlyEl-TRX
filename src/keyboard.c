@@ -33,6 +33,7 @@ void Keyboard_Init(void)
     }
 }
 
+
 static void Execute(input_key_t key, key_gesture_event_t event)
 {
     uint8_t long_press = (uint8_t)(event == KEY_GESTURE_LONG);
@@ -140,6 +141,7 @@ static void Execute(input_key_t key, key_gesture_event_t event)
     menu.need_redraw = 1U;
 }
 
+
 void Keyboard_Task(input_key_t pressed)
 {
     uint8_t i;
@@ -182,8 +184,10 @@ void Keyboard_Task(input_key_t pressed)
     {
         uint8_t set_index = (uint8_t)((uint8_t)Key_6_3 - (uint8_t)Key_2_1);
         uint8_t filter_index = (uint8_t)((uint8_t)Key_10_2 - (uint8_t)Key_2_1);
-        suppressed[set_index] = 1U; suppressed[filter_index] = 1U;
-        gestures[set_index].active = 0U; gestures[filter_index].active = 0U;
+        suppressed[set_index] = 1U;
+        suppressed[filter_index] = 1U;
+        gestures[set_index].active = 0U;
+        gestures[filter_index].active = 0U;
         service_chord_tick = now;
         service_chord_latched = (menu.tx_active == 0U && Settings_Page() != 3U) ? 1U : 2U;
         return;
@@ -212,8 +216,7 @@ void Keyboard_Task(input_key_t pressed)
         if (key == Key_10_3)
             continue; /* Работающий автомат TS не заменяем. */
         /* Цифра принимается сразу и поглощает весь жест, даже если FUNC истечёт. */
-        if (key == pressed && Entry_Active() != 0U && Settings_Page() == 0U &&
-            KeyLayout_Character(key) != '\0')
+        if (key == pressed && Entry_Active() != 0U && Settings_Page() == 0U && KeyLayout_Character(key) != '\0')
         {
             (void)Entry_HandleKey(key);
             suppressed[i] = 1U;
@@ -230,9 +233,8 @@ void Keyboard_Task(input_key_t pressed)
                 suppressed[i] = 0U;
             continue;
         }
-        event = KeyGesture_Update(&gestures[i], down,
-                    (uint8_t)(key == pressed),
-                    (uint8_t)((key == Key_9_2 || key == Key_9_3) && Settings_Page() != 3U), now);
+        event = KeyGesture_Update(&gestures[i], down, (uint8_t)(key == pressed),
+                                  (uint8_t)((key == Key_9_2 || key == Key_9_3) && Settings_Page() != 3U), now);
         if (event != KEY_GESTURE_NONE)
             Execute(key, event);
     }

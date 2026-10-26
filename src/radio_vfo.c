@@ -16,11 +16,13 @@ radio_preset_t RadioVfo_Capture(void)
     return result;
 }
 
+
 /* Сохраняет рабочую настройку перед переключением; старая частота не теряется. */
 static void SaveActive(void)
 {
     vfo[active_vfo] = RadioVfo_Capture();
 }
+
 
 void RadioVfo_Apply(const radio_preset_t *preset)
 {
@@ -33,16 +35,19 @@ void RadioVfo_Apply(const radio_preset_t *preset)
     menu.need_redraw = 1U;
 }
 
+
 void RadioVfo_Init(void)
 {
     uint8_t i;
-    radio_preset_t initial = { menu.rf_hz, RADIO_LSB, 0U, 0U, menu.band_index };
+    radio_preset_t initial = {menu.rf_hz, RADIO_LSB, 0U, 0U, menu.band_index};
     active_vfo = 0U;
     split_active = 0U;
-    for (i = 0U; i < RADIO_MODE_COUNT; i++) filters[i] = 0U;
+    for (i = 0U; i < RADIO_MODE_COUNT; i++)
+        filters[i] = 0U;
     vfo[0] = initial;
     vfo[1] = initial;
 }
+
 
 /* A/B меняет активную настройку. Физическое переключение RX/TX ещё не подключено. */
 void RadioVfo_Switch(void)
@@ -52,14 +57,17 @@ void RadioVfo_Switch(void)
     RadioVfo_Apply(&vfo[active_vfo]);
 }
 
+
 /* По раскладке A=B всегда копирует A в B, независимо от выбранного VFO. */
 void RadioVfo_CopyAToB(void)
 {
     SaveActive();
     vfo[1] = vfo[0];
-    if (active_vfo == 1U) RadioVfo_Apply(&vfo[1]);
+    if (active_vfo == 1U)
+        RadioVfo_Apply(&vfo[1]);
     menu.need_redraw = 1U;
 }
+
 
 void RadioVfo_ChangeMode(uint8_t long_press)
 {
@@ -69,22 +77,30 @@ void RadioVfo_ChangeMode(uint8_t long_press)
     RadioVfo_Apply(&vfo[active_vfo]);
 }
 
+
 void RadioVfo_CycleFilter(void)
 {
     RadioVfo_AdjustFilter(1);
 }
 
+
 void RadioVfo_AdjustFilter(int32_t steps)
 {
     uint8_t mode = vfo[active_vfo].mode;
     int32_t value = ((int32_t)filters[mode] + steps % (int32_t)RADIO_FILTER_COUNT) % (int32_t)RADIO_FILTER_COUNT;
-    if (value < 0) value += (int32_t)RADIO_FILTER_COUNT;
+    if (value < 0)
+        value += (int32_t)RADIO_FILTER_COUNT;
     filters[mode] = (uint8_t)value;
     vfo[active_vfo].filter = filters[mode];
     menu.need_redraw = 1U;
 }
 
-uint8_t RadioVfo_Filter(void) { return vfo[active_vfo].filter; }
+
+uint8_t RadioVfo_Filter(void)
+{
+    return vfo[active_vfo].filter;
+}
+
 
 void RadioVfo_ToggleSplit(void)
 {
@@ -92,7 +108,26 @@ void RadioVfo_ToggleSplit(void)
     menu.need_redraw = 1U;
 }
 
-uint8_t RadioVfo_Split(void) { return split_active; }
-uint8_t RadioVfo_Active(void) { return active_vfo; }
-uint8_t RadioVfo_Mode(void) { return vfo[active_vfo].mode; }
-uint32_t RadioVfo_OtherHz(void) { return vfo[active_vfo ^ 1U].hz; }
+
+uint8_t RadioVfo_Split(void)
+{
+    return split_active;
+}
+
+
+uint8_t RadioVfo_Active(void)
+{
+    return active_vfo;
+}
+
+
+uint8_t RadioVfo_Mode(void)
+{
+    return vfo[active_vfo].mode;
+}
+
+
+uint32_t RadioVfo_OtherHz(void)
+{
+    return vfo[active_vfo ^ 1U].hz;
+}

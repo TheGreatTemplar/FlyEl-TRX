@@ -50,9 +50,10 @@ def run_unit(source, compiler, linker, includes):
     harness = OUTPUT / (source.stem + '_main.c')
     harness.write_text('#include "' + source.as_posix() + '"\n'
         + f'volatile unsigned int arm_test_results[{len(cases)}];\n'
-        + 'volatile unsigned int arm_test_done;\nvoid arm_test_main(void) {\n'
-        + ''.join(f'arm_test_results[{i}] = (unsigned int){name}();\n' for i, name in enumerate(cases))
-        + 'arm_test_done = 1U; __asm volatile("bkpt #0"); for (;;) {} }\n', encoding='utf-8')
+        + 'volatile unsigned int arm_test_done;\n\nvoid arm_test_main(void)\n{\n'
+        + ''.join(f'    arm_test_results[{i}] = (unsigned int){name}();\n' for i, name in enumerate(cases))
+        + '    arm_test_done = 1U;\n    __asm volatile("bkpt #0");\n'
+        + '    for (;;)\n    {\n    }\n}\n', encoding='utf-8')
     obj = harness.with_suffix('.o')
     axf = harness.with_suffix('.axf')
     subprocess.run([compiler, '--target=arm-arm-none-eabi', '-mcpu=cortex-m3', '-mthumb',

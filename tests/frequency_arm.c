@@ -1,7 +1,12 @@
 /* Позиционный ввод 6/7 цифр и автоточки проверяются исполнением Thumb-кода. */
 #include "frequency_parse.c"
 #include <string.h>
-#define CHECK(expr) do { if (!(expr)) return __LINE__; } while (0)
+#define CHECK(expr)                                                                                                    \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        if (!(expr))                                                                                                   \
+            return __LINE__;                                                                                           \
+    } while (0)
 
 int test_frequency_positional_digits_and_automatic_dots(void)
 {
@@ -12,12 +17,17 @@ int test_frequency_positional_digits_and_automatic_dots(void)
     CHECK(Frequency_ParseDigits("1499999", 2U, &hz) != 0U && hz == 14999990U);
     CHECK(Frequency_ParseDigits("7", 1U, &hz) != 0U && hz == 7000000U);
     CHECK(Frequency_ParseDigits("142", 2U, &hz) != 0U && hz == 14200000U);
-    Frequency_FormatDigits("2146978", 2U, text); CHECK(strcmp(text, "21.469.78") == 0);
-    Frequency_FormatDigits("365000", 1U, text); CHECK(strcmp(text, "3.650.00") == 0);
-    Frequency_FormatDigits("21", 2U, text); CHECK(strcmp(text, "21.___.__") == 0);
-    Frequency_FormatDigits("", 1U, text); CHECK(strcmp(text, "_.___.__") == 0);
+    Frequency_FormatDigits("2146978", 2U, text);
+    CHECK(strcmp(text, "21.469.78") == 0);
+    Frequency_FormatDigits("365000", 1U, text);
+    CHECK(strcmp(text, "3.650.00") == 0);
+    Frequency_FormatDigits("21", 2U, text);
+    CHECK(strcmp(text, "21.___.__") == 0);
+    Frequency_FormatDigits("", 1U, text);
+    CHECK(strcmp(text, "_.___.__") == 0);
     return 0;
 }
+
 
 int test_frequency_invalid_digits_and_limits(void)
 {
@@ -32,6 +42,7 @@ int test_frequency_invalid_digits_and_limits(void)
     CHECK(hz == 123U);
     return 0;
 }
+
 
 int test_channel_number_bounds(void)
 {

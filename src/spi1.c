@@ -10,11 +10,11 @@
  * CS, RST и DC настраиваются в gmg12864.c.
  */
 
-#define SPI1_SCK_PIN                5U
-#define SPI1_MISO_PIN               6U
-#define SPI1_MOSI_PIN               7U
+#define SPI1_SCK_PIN 5U
+#define SPI1_MISO_PIN 6U
+#define SPI1_MOSI_PIN 7U
 
-#define SPI1_TIMEOUT                1000000UL
+#define SPI1_TIMEOUT 1000000UL
 
 static spi1_status_t SPI1_WaitFlagSet(uint16_t flag)
 {
@@ -35,6 +35,7 @@ static spi1_status_t SPI1_WaitFlagSet(uint16_t flag)
     return SPI1_OK;
 }
 
+
 static spi1_status_t SPI1_WaitNotBusy(void)
 {
     uint32_t timeout;
@@ -54,36 +55,35 @@ static spi1_status_t SPI1_WaitNotBusy(void)
     return SPI1_OK;
 }
 
+
 /* Настраивает SPI1 для LCD: режим 0, APB2/4 = 18 МГц. */
 void SPI1_LCD_Init(void)
 {
     /*
      * GPIOA, AFIO и SPI1.
      */
-    RCC->APB2ENR |= RCC_APB2ENR_IOPAEN |
-                    RCC_APB2ENR_AFIOEN |
-                    RCC_APB2ENR_SPI1EN;
+    RCC->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_AFIOEN | RCC_APB2ENR_SPI1EN;
 
     /*
      * PA5 = SCK, alternate function push-pull, 50 MHz.
      * MODE5 = 11, CNF5 = 10, поле = 0xB.
      */
     GPIOA->CRL &= ~(0xFUL << (SPI1_SCK_PIN * 4U));
-    GPIOA->CRL |=  (0xBUL << (SPI1_SCK_PIN * 4U));
+    GPIOA->CRL |= (0xBUL << (SPI1_SCK_PIN * 4U));
 
     /*
      * PA6 = MISO, input floating.
      * Для дисплея обычно не нужен, но пусть будет входом.
      */
     GPIOA->CRL &= ~(0xFUL << (SPI1_MISO_PIN * 4U));
-    GPIOA->CRL |=  (0x4UL << (SPI1_MISO_PIN * 4U));
+    GPIOA->CRL |= (0x4UL << (SPI1_MISO_PIN * 4U));
 
     /*
      * PA7 = MOSI, alternate function push-pull, 50 MHz.
      * MODE7 = 11, CNF7 = 10, поле = 0xB.
      */
     GPIOA->CRL &= ~(0xFUL << (SPI1_MOSI_PIN * 4U));
-    GPIOA->CRL |=  (0xBUL << (SPI1_MOSI_PIN * 4U));
+    GPIOA->CRL |= (0xBUL << (SPI1_MOSI_PIN * 4U));
 
     /*
      * Отключаем SPI перед настройкой.
@@ -98,13 +98,11 @@ void SPI1_LCD_Init(void)
      * BR = 001: делитель /4, SCK = 18 MHz.
      * Для первого запуска это безопаснее, чем 12 MHz из исходного HAL-проекта.
      */
-    SPI1->CR1 = SPI_CR1_MSTR |
-                SPI_CR1_SSM |
-                SPI_CR1_SSI |
-                SPI_CR1_BR_0; // | SPI_CR1_BR_0;
+    SPI1->CR1 = SPI_CR1_MSTR | SPI_CR1_SSM | SPI_CR1_SSI | SPI_CR1_BR_0; // | SPI_CR1_BR_0;
 
     SPI1->CR1 |= SPI_CR1_SPE;
 }
+
 
 /* Передаёт байт с ограниченным ожиданием флагов и завершения передачи. */
 spi1_status_t SPI1_SendByte(uint8_t data)

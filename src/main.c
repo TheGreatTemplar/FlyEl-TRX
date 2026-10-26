@@ -23,16 +23,16 @@
  * Кодировка файла: Windows-1251
  */
 
-#define HSE_VALUE_HZ                8000000UL
-#define SYSCLK_HZ                   72000000UL
+#define HSE_VALUE_HZ 8000000UL
+#define SYSCLK_HZ 72000000UL
 
-#define TIMER_IRQ_HZ                2000UL
-#define LED_TOGGLE_TICKS            (TIMER_IRQ_HZ / 2UL)
+#define TIMER_IRQ_HZ 2000UL
+#define LED_TOGGLE_TICKS (TIMER_IRQ_HZ / 2UL)
 
-#define LED_ACTIVE_LOW              1
+#define LED_ACTIVE_LOW 1
 
-#define PC13_PIN                    13U
-#define PC13_MASK                   (1UL << PC13_PIN)
+#define PC13_PIN 13U
+#define PC13_MASK (1UL << PC13_PIN)
 
 uint32_t SystemCoreClock = HSE_VALUE_HZ;
 
@@ -46,12 +46,14 @@ void SystemInit(void)
 {
 }
 
+
 __attribute__((noreturn)) static void Error_Handler(void)
 {
     while (1)
     {
     }
 }
+
 
 /* Запускает PLL x9 от кварца 8 МГц; APB1 делится на 2, ADC — на 6. */
 static void Clock_Init_72MHz_HSE8(void)
@@ -72,7 +74,7 @@ static void Clock_Init_72MHz_HSE8(void)
     }
 
     FLASH->ACR &= ~(uint32_t)FLASH_ACR_LATENCY;
-	FLASH->ACR |= FLASH_ACR_PRFTBE | FLASH_ACR_LATENCY_2;
+    FLASH->ACR |= FLASH_ACR_PRFTBE | FLASH_ACR_LATENCY_2;
 
     RCC->CR &= ~RCC_CR_PLLON;
 
@@ -87,20 +89,11 @@ static void Clock_Init_72MHz_HSE8(void)
         timeout--;
     }
 
-    RCC->CFGR &= ~(RCC_CFGR_HPRE |
-                   RCC_CFGR_PPRE1 |
-                   RCC_CFGR_PPRE2 |
-                   RCC_CFGR_ADCPRE |
-                   RCC_CFGR_PLLSRC |
-                   RCC_CFGR_PLLXTPRE |
-                   RCC_CFGR_PLLMULL);
+    RCC->CFGR &= ~(RCC_CFGR_HPRE | RCC_CFGR_PPRE1 | RCC_CFGR_PPRE2 | RCC_CFGR_ADCPRE | RCC_CFGR_PLLSRC |
+                   RCC_CFGR_PLLXTPRE | RCC_CFGR_PLLMULL);
 
-    RCC->CFGR |= RCC_CFGR_HPRE_DIV1 |
-             RCC_CFGR_PPRE1_DIV2 |
-             RCC_CFGR_PPRE2_DIV1 |
-             RCC_CFGR_ADCPRE_DIV6 |
-             RCC_CFGR_PLLSRC |
-             RCC_CFGR_PLLMULL9;
+    RCC->CFGR |= RCC_CFGR_HPRE_DIV1 | RCC_CFGR_PPRE1_DIV2 | RCC_CFGR_PPRE2_DIV1 | RCC_CFGR_ADCPRE_DIV6 |
+                 RCC_CFGR_PLLSRC | RCC_CFGR_PLLMULL9;
 
     RCC->CR |= RCC_CR_PLLON;
 
@@ -132,6 +125,7 @@ static void Clock_Init_72MHz_HSE8(void)
     SystemCoreClock = SYSCLK_HZ;
 }
 
+
 /* Освобождает PA15/PB3/PB4 для GPIO, оставляя отладку SWD. */
 static void Board_DisableJTAG_KeepSWD(void)
 {
@@ -146,12 +140,13 @@ static void Board_DisableJTAG_KeepSWD(void)
     AFIO->MAPR = (AFIO->MAPR & ~(7UL << 24U)) | (2UL << 24U);
 }
 
+
 static void LED_PC13_Init(void)
 {
     RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
 
     GPIOC->CRH &= ~(0xFUL << 20U);
-    GPIOC->CRH |=  (0x2UL << 20U);
+    GPIOC->CRH |= (0x2UL << 20U);
 
 #if LED_ACTIVE_LOW
     GPIOC->BSRR = PC13_MASK;
@@ -159,6 +154,7 @@ static void LED_PC13_Init(void)
     GPIOC->BRR = PC13_MASK;
 #endif
 }
+
 
 static void LED_PC13_Toggle(void)
 {
@@ -172,10 +168,12 @@ static void LED_PC13_Toggle(void)
     }
 }
 
+
 uint32_t App_GetTick500us(void)
 {
     return g_tick_500us;
 }
+
 
 void App_DelayMs(uint32_t ms)
 {
@@ -189,6 +187,7 @@ void App_DelayMs(uint32_t ms)
     {
     }
 }
+
 
 /* Запускает базу 500 мкс для ввода, задержек и временных автоматов. */
 static void TIM2_Init_2000Hz(void)
@@ -204,7 +203,7 @@ static void TIM2_Init_2000Hz(void)
      * IRQ = 72 MHz / 36 / 1000 = 2000 Hz.
      */
     TIM2->PSC = 36U - 1U;
-	TIM2->ARR = 1000U - 1U;
+    TIM2->ARR = 1000U - 1U;
 
     TIM2->EGR = TIM_EGR_UG;
     TIM2->SR = 0U;
@@ -216,6 +215,7 @@ static void TIM2_Init_2000Hz(void)
 
     TIM2->CR1 = TIM_CR1_CEN;
 }
+
 
 /* Обновляет время и драйвер ввода; блокирующие операции интерфейса здесь запрещены. */
 void TIM2_IRQHandler(void)
@@ -236,6 +236,7 @@ void TIM2_IRQHandler(void)
         }
     }
 }
+
 
 /* Показывает логотип три секунды и отбрасывает события, собранные во время заставки. */
 static void App_ShowStartupScreen(void)
@@ -268,6 +269,7 @@ static void App_ShowStartupScreen(void)
         }
     }
 }
+
 
 /* Инициализирует периферию в зависимом порядке и запускает кооперативный основной цикл. */
 int main(void)

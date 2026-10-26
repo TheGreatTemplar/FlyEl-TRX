@@ -16,12 +16,17 @@
 
 const char *StatusUI_Header(void)
 {
-    if (EEPROM_TestStatus()[0] != '\0') return EEPROM_TestStatus();
-    if (Entry_Active() != 0U) return Entry_Status();
-    if (MemoryStore_Status()[0] != '\0') return MemoryStore_Status();
-    if (Scan_Active() != 0U) return "SCAN";
+    if (EEPROM_TestStatus()[0] != '\0')
+        return EEPROM_TestStatus();
+    if (Entry_Active() != 0U)
+        return Entry_Status();
+    if (MemoryStore_Status()[0] != '\0')
+        return MemoryStore_Status();
+    if (Scan_Active() != 0U)
+        return "SCAN";
     return KeyLayout_Name(menu.last_key);
 }
+
 
 void StatusUI_Draw(void)
 {
@@ -52,12 +57,12 @@ void StatusUI_Draw(void)
             LCD_Print5x7(text_x, 44U, "MEMO", 1U, CH_UNINVERT);
         /* WAIT/BLANK между MEMO и закреплённым справа номером. */
         text_x = UI_MEMORY_STATUS_X;
-        if (MemoryStore_Ready() == 0U) LCD_Print5x7(text_x, 44U, "WAIT", 1U, CH_UNINVERT);
+        if (MemoryStore_Ready() == 0U)
+            LCD_Print5x7(text_x, 44U, "WAIT", 1U, CH_UNINVERT);
         else if (MemoryControl_Blank() != 0U)
         {
             /* Плоский инверсный фон с полем в один пиксель вокруг BLANK. */
-            LCD_FillRectangle((uint8_t)(text_x - 1U), 42U,
-                              (uint8_t)(LCD_GetText5x7Width("BLANK", 1U) + 1U), 8U, PX_ON);
+            LCD_FillRectangle((uint8_t)(text_x - 1U), 42U, (uint8_t)(LCD_GetText5x7Width("BLANK", 1U) + 1U), 8U, PX_ON);
             LCD_Print5x7(text_x, 43U, "BLANK", 1U, CH_INVERT);
         }
         return;
@@ -65,10 +70,14 @@ void StatusUI_Draw(void)
     if (show_channel == 0U)
     {
         char filter[4] = "F";
-        if (panel.nb != 0U) Text_Append(text, "N");
-        if (panel.comp != 0U) Text_Append(text, "C");
-        if (panel.vox != 0U && RadioMode_IsSSB(RadioVfo_Mode()) != 0U) Text_Append(text, "V");
-        if (panel.tuner != 0U) Text_Append(text, (panel.tuner == 2U) ? "T*" : "T");
+        if (panel.nb != 0U)
+            Text_Append(text, "N");
+        if (panel.comp != 0U)
+            Text_Append(text, "C");
+        if (panel.vox != 0U && RadioMode_IsSSB(RadioVfo_Mode()) != 0U)
+            Text_Append(text, "V");
+        if (panel.tuner != 0U)
+            Text_Append(text, (panel.tuner == 2U) ? "T*" : "T");
         Text_U32ToDec(number, (uint32_t)RadioVfo_Filter() + 1U, 1U);
         Text_Append(filter, number);
         LCD_Print5x7(UI_LABEL_X, 44U, filter, 1U, CH_UNINVERT);

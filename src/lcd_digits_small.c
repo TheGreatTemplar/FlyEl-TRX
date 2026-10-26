@@ -8,7 +8,8 @@
 void LCD_DrawDigit8x9(uint8_t x, uint8_t y, uint8_t symbol, uint8_t invert)
 {
     uint8_t row, col;
-    if (symbol < (uint8_t)'0' || symbol > (uint8_t)'9') return;
+    if (symbol < (uint8_t)'0' || symbol > (uint8_t)'9')
+        return;
     for (row = 0U; row < FONT_CHANNEL_BOLD_HEIGHT; row++)
     {
         uint8_t bits = font_channel_bold_8x9[symbol - (uint8_t)'0'][row];
@@ -17,16 +18,14 @@ void LCD_DrawDigit8x9(uint8_t x, uint8_t y, uint8_t symbol, uint8_t invert)
             if ((uint16_t)x + col < LCD_WIDTH && (uint16_t)y + row < LCD_HEIGHT)
             {
                 uint8_t on = (uint8_t)((bits >> (7U - col)) & 1U);
-                LCD_DrawPixel((uint8_t)(x + col), (uint8_t)(y + row),
-                              (uint8_t)(on ^ ((invert & CH_INVERT) != 0U)));
+                LCD_DrawPixel((uint8_t)(x + col), (uint8_t)(y + row), (uint8_t)(on ^ ((invert & CH_INVERT) != 0U)));
             }
         }
     }
 }
 
-static uint8_t LCD_FindSymbol7x11(uint8_t symbol,
-                                 uint16_t *symbol_offset,
-                                 uint8_t *symbol_width)
+
+static uint8_t LCD_FindSymbol7x11(uint8_t symbol, uint16_t *symbol_offset, uint8_t *symbol_width)
 {
     uint8_t i;
 
@@ -43,6 +42,7 @@ static uint8_t LCD_FindSymbol7x11(uint8_t symbol,
     return 0U;
 }
 
+
 static uint8_t LCD_GetSymbol7x11Width(uint8_t symbol)
 {
     uint16_t symbol_offset;
@@ -55,6 +55,7 @@ static uint8_t LCD_GetSymbol7x11Width(uint8_t symbol)
 
     return symbol_width;
 }
+
 
 void LCD_DrawDigit7x11(uint8_t x_pos, uint8_t y_pos, uint8_t symbol, uint8_t invert)
 {
@@ -106,6 +107,7 @@ void LCD_DrawDigit7x11(uint8_t x_pos, uint8_t y_pos, uint8_t symbol, uint8_t inv
     }
 }
 
+
 void LCD_PrintDigits7x11(uint8_t x_pos, uint8_t y_pos, const char *text, uint8_t spacing, uint8_t invert)
 {
     uint8_t symbol;
@@ -130,6 +132,7 @@ void LCD_PrintDigits7x11(uint8_t x_pos, uint8_t y_pos, const char *text, uint8_t
         text++;
     }
 }
+
 
 void LCD_DrawDigit4x6(uint8_t x_pos, uint8_t y_pos, uint8_t symbol, uint8_t invert)
 {
@@ -176,6 +179,7 @@ void LCD_DrawDigit4x6(uint8_t x_pos, uint8_t y_pos, uint8_t symbol, uint8_t inve
     }
 }
 
+
 void LCD_PrintDigits4x6(uint8_t x_pos, uint8_t y_pos, const char *text, uint8_t spacing, uint8_t invert)
 {
     if (text == 0)
@@ -194,6 +198,7 @@ void LCD_PrintDigits4x6(uint8_t x_pos, uint8_t y_pos, const char *text, uint8_t 
         text++;
     }
 }
+
 
 uint8_t LCD_GetDigits4x6Width(const char *text, uint8_t spacing)
 {

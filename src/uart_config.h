@@ -2,9 +2,23 @@
 #define UART_CONFIG_H
 #include <stdint.h>
 
-enum { UART_PARITY_NONE, UART_PARITY_EVEN, UART_PARITY_ODD };
-enum { UART_STOP_ONE, UART_STOP_TWO, UART_STOP_HALF, UART_STOP_ONE_HALF };
-enum { UART_BAUD_COUNT = 8U };
+enum
+{
+    UART_PARITY_NONE,
+    UART_PARITY_EVEN,
+    UART_PARITY_ODD
+};
+enum
+{
+    UART_STOP_ONE,
+    UART_STOP_TWO,
+    UART_STOP_HALF,
+    UART_STOP_ONE_HALF
+};
+enum
+{
+    UART_BAUD_COUNT = 8U
+};
 typedef struct
 {
     uint32_t baud;

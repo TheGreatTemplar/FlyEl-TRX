@@ -1,25 +1,25 @@
 #include "si5351.h"
 #include "i2c_soft.h"
 
-#define SI5351_ADDR_7BIT            0x60U
+#define SI5351_ADDR_7BIT 0x60U
 
-#define SI5351_REG_OUTPUT_ENABLE    3U
-#define SI5351_REG_CLK0_CTRL        16U
-#define SI5351_REG_PLLA_PARAMS      26U
-#define SI5351_REG_MS0_PARAMS       42U
-#define SI5351_REG_PLL_RESET        177U
-#define SI5351_REG_XTAL_LOAD        183U
+#define SI5351_REG_OUTPUT_ENABLE 3U
+#define SI5351_REG_CLK0_CTRL 16U
+#define SI5351_REG_PLLA_PARAMS 26U
+#define SI5351_REG_MS0_PARAMS 42U
+#define SI5351_REG_PLL_RESET 177U
+#define SI5351_REG_XTAL_LOAD 183U
 
 //#define SI5351_PLLA_HZ              900000000UL
-#define SI5351_PLLA_HZ				899960100UL
-#define SI5351_FRAC_DENOM           1048575UL
+#define SI5351_PLLA_HZ 899960100UL
+#define SI5351_FRAC_DENOM 1048575UL
 
-#define SI5351_CLK_SRC_MS           0x0CU
-#define SI5351_CLK_DRIVE_8MA        0x03U
-#define SI5351_CLK_INTEGER_MODE     0x40U
-#define SI5351_CLK_POWER_DOWN       0x80U
+#define SI5351_CLK_SRC_MS 0x0CU
+#define SI5351_CLK_DRIVE_8MA 0x03U
+#define SI5351_CLK_INTEGER_MODE 0x40U
+#define SI5351_CLK_POWER_DOWN 0x80U
 
-#define SI5351_XTAL_LOAD_10PF       0xD2U
+#define SI5351_XTAL_LOAD_10PF 0xD2U
 
 static uint8_t si5351_oeb_mask = 0xFFU;
 
@@ -37,6 +37,7 @@ static si5351_status_t Si5351_WriteReg(uint8_t reg, uint8_t value)
 
     return SI5351_OK;
 }
+
 
 static si5351_status_t Si5351_WriteBulk(uint8_t reg, const uint8_t *data, uint8_t len)
 {
@@ -63,6 +64,7 @@ static si5351_status_t Si5351_WriteBulk(uint8_t reg, const uint8_t *data, uint8_
     return SI5351_OK;
 }
 
+
 static uint32_t Si5351_Gcd(uint32_t a, uint32_t b)
 {
     while (b != 0U)
@@ -77,31 +79,23 @@ static uint32_t Si5351_Gcd(uint32_t a, uint32_t b)
     return a;
 }
 
+
 /* Упаковывает P1/P2/P3 и R-divider в восемь байтов регистров Si5351. */
-static void Si5351_PackParams(uint32_t p1,
-                              uint32_t p2,
-                              uint32_t p3,
-                              uint8_t r_div_code,
-                              uint8_t *regs)
+static void Si5351_PackParams(uint32_t p1, uint32_t p2, uint32_t p3, uint8_t r_div_code, uint8_t *regs)
 {
     regs[0] = (uint8_t)((p3 >> 8) & 0xFFU);
     regs[1] = (uint8_t)(p3 & 0xFFU);
-    regs[2] = (uint8_t)(((r_div_code & 0x07U) << 4U) |
-                        ((p1 >> 16) & 0x03U));
+    regs[2] = (uint8_t)(((r_div_code & 0x07U) << 4U) | ((p1 >> 16) & 0x03U));
     regs[3] = (uint8_t)((p1 >> 8) & 0xFFU);
     regs[4] = (uint8_t)(p1 & 0xFFU);
-    regs[5] = (uint8_t)(((p3 >> 12) & 0xF0U) |
-                        ((p2 >> 16) & 0x0FU));
+    regs[5] = (uint8_t)(((p3 >> 12) & 0xF0U) | ((p2 >> 16) & 0x0FU));
     regs[6] = (uint8_t)((p2 >> 8) & 0xFFU);
     regs[7] = (uint8_t)(p2 & 0xFFU);
 }
 
+
 /* Вычисляет целую/дробную части делителя и R-divider в допустимых пределах. */
-static uint8_t Si5351_CalcMultisynth(uint32_t fout_hz,
-                                     uint32_t *p1,
-                                     uint32_t *p2,
-                                     uint32_t *p3,
-                                     uint8_t *r_div_code,
+static uint8_t Si5351_CalcMultisynth(uint32_t fout_hz, uint32_t *p1, uint32_t *p2, uint32_t *p3, uint8_t *r_div_code,
                                      uint8_t *integer_mode)
 {
     uint32_t r_div;
@@ -121,9 +115,7 @@ static uint8_t Si5351_CalcMultisynth(uint32_t fout_hz,
     r_div = 1U;
     r_code = 0U;
 
-    while (((uint64_t)SI5351_PLLA_HZ >
-            ((uint64_t)fout_hz * r_div * 2048ULL)) &&
-           (r_div < 128U))
+    while (((uint64_t)SI5351_PLLA_HZ > ((uint64_t)fout_hz * r_div * 2048ULL)) && (r_div < 128U))
     {
         r_div <<= 1U;
         r_code++;
@@ -180,6 +172,7 @@ static uint8_t Si5351_CalcMultisynth(uint32_t fout_hz,
     return 1U;
 }
 
+
 /* Меняет только бит выбранного выхода в общей маске регистра 3. */
 static si5351_status_t Si5351_OutputEnable(uint8_t clk, uint8_t enable)
 {
@@ -190,7 +183,7 @@ static si5351_status_t Si5351_OutputEnable(uint8_t clk, uint8_t enable)
 
     if (enable != 0U)
     {
-        si5351_oeb_mask &= (uint8_t)~(1U << clk);
+        si5351_oeb_mask &= (uint8_t) ~(1U << clk);
     }
     else
     {
@@ -199,6 +192,7 @@ static si5351_status_t Si5351_OutputEnable(uint8_t clk, uint8_t enable)
 
     return Si5351_WriteReg(SI5351_REG_OUTPUT_ENABLE, si5351_oeb_mask);
 }
+
 
 static si5351_status_t Si5351_SetPLLA_900MHz(void)
 {
@@ -212,6 +206,7 @@ static si5351_status_t Si5351_SetPLLA_900MHz(void)
 
     return Si5351_WriteBulk(SI5351_REG_PLLA_PARAMS, regs, 8U);
 }
+
 
 /* Отключает выбранный CLK, обновляет делитель и включает CLK после успешного обмена. */
 si5351_status_t Si5351_SetFreq(uint8_t clk, uint32_t fout_hz)
@@ -230,12 +225,7 @@ si5351_status_t Si5351_SetFreq(uint8_t clk, uint32_t fout_hz)
         return SI5351_ERR_ARG;
     }
 
-    if (Si5351_CalcMultisynth(fout_hz,
-                              &p1,
-                              &p2,
-                              &p3,
-                              &r_div_code,
-                              &integer_mode) == 0U)
+    if (Si5351_CalcMultisynth(fout_hz, &p1, &p2, &p3, &r_div_code, &integer_mode) == 0U)
     {
         return SI5351_ERR_ARG;
     }
@@ -270,11 +260,13 @@ si5351_status_t Si5351_SetFreq(uint8_t clk, uint32_t fout_hz)
     return Si5351_OutputEnable(clk, 1U);
 }
 
+
 /* Настраивает гетеродин выше принимаемой частоты: LO = RF + ПЧ. */
 si5351_status_t Si5351_SetVfoHighSide(uint8_t clk, uint32_t rf_hz, uint32_t if_hz)
 {
     return Si5351_SetFreq(clk, rf_hz + if_hz);
 }
+
 
 /* Отключает выходы, настраивает нагрузку кварца и PLLA, затем сбрасывает PLL. */
 si5351_status_t Si5351_Init(void)

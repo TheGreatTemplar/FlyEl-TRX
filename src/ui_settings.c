@@ -15,7 +15,11 @@ void SettingsUI_Draw(void)
     char text[20];
     uint8_t page = Settings_Page();
     uint8_t item = Settings_Item();
-    if (page == 3U) { ServiceUI_Draw(); return; }
+    if (page == 3U)
+    {
+        ServiceUI_Draw();
+        return;
+    }
     LCD_ClearBuffer();
     LCD_Print5x7(0U, 0U, (page == 3U) ? "ENGINEER" : ((page == 2U) ? "NB LEVEL" : "QUICK SET"), 1U, CH_UNINVERT);
     LCD_Print5x7(83U, 0U, "SET:OUT", 1U, CH_UNINVERT);
@@ -30,7 +34,8 @@ void SettingsUI_Draw(void)
     {
         Text_U32ToDec(text, panel.nb_level, 1U);
         Widgets_MenuLine(11U, "NB", text, (uint8_t)(item == 0U));
-        Text_U32ToDec(text, Scan_Interval() / 2U, 1U); Text_Append(text, "ms");
+        Text_U32ToDec(text, Scan_Interval() / 2U, 1U);
+        Text_Append(text, "ms");
         Widgets_MenuLine(21U, "SCAN", text, (uint8_t)(item == 1U));
         Text_U32ToDec(text, (uint32_t)RadioVfo_Filter() + 1U, 1U);
         Widgets_MenuLine(31U, "FIL", text, (uint8_t)(item == 2U));

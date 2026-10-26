@@ -15,16 +15,21 @@ static void Delay(void)
     }
 }
 
+
 static void Sda(uint8_t high)
 {
-    if (high != 0U) I2C2_GPIO->BSRR = SDA_MASK;
-    else I2C2_GPIO->BRR = SDA_MASK;
+    if (high != 0U)
+        I2C2_GPIO->BSRR = SDA_MASK;
+    else
+        I2C2_GPIO->BRR = SDA_MASK;
 }
+
 
 static void SclLow(void)
 {
     I2C2_GPIO->BRR = SCL_MASK;
 }
+
 
 /* Освобождает SCL и ждёт фактического высокого уровня с ограничением времени. */
 static i2c2_soft_status_t SclHigh(void)
@@ -33,24 +38,29 @@ static i2c2_soft_status_t SclHigh(void)
     I2C2_GPIO->BSRR = SCL_MASK;
     while ((I2C2_GPIO->IDR & SCL_MASK) == 0U)
     {
-        if (remaining-- == 0U) return I2C2_SOFT_TIMEOUT;
+        if (remaining-- == 0U)
+            return I2C2_SOFT_TIMEOUT;
     }
     return I2C2_SOFT_OK;
 }
+
 
 static i2c2_soft_status_t Start(void)
 {
     Sda(1U);
     Delay();
-    if (SclHigh() != I2C2_SOFT_OK) return I2C2_SOFT_TIMEOUT;
+    if (SclHigh() != I2C2_SOFT_OK)
+        return I2C2_SOFT_TIMEOUT;
     Delay();
-    if ((I2C2_GPIO->IDR & SDA_MASK) == 0U) return I2C2_SOFT_BUS_ERROR;
+    if ((I2C2_GPIO->IDR & SDA_MASK) == 0U)
+        return I2C2_SOFT_BUS_ERROR;
     Sda(0U);
     Delay();
     SclLow();
     Delay();
     return I2C2_SOFT_OK;
 }
+
 
 static i2c2_soft_status_t Stop(void)
 {
@@ -62,9 +72,11 @@ static i2c2_soft_status_t Stop(void)
     Delay();
     Sda(1U);
     Delay();
-    if (status != I2C2_SOFT_OK) return status;
+    if (status != I2C2_SOFT_OK)
+        return status;
     return ((I2C2_GPIO->IDR & SDA_MASK) != 0U) ? I2C2_SOFT_OK : I2C2_SOFT_BUS_ERROR;
 }
+
 
 static i2c2_soft_status_t WriteByte(uint8_t value)
 {
@@ -74,7 +86,8 @@ static i2c2_soft_status_t WriteByte(uint8_t value)
     {
         Sda((uint8_t)((value & 0x80U) != 0U));
         Delay();
-        if (SclHigh() != I2C2_SOFT_OK) return I2C2_SOFT_TIMEOUT;
+        if (SclHigh() != I2C2_SOFT_OK)
+            return I2C2_SOFT_TIMEOUT;
         Delay();
         SclLow();
         Delay();
@@ -82,13 +95,15 @@ static i2c2_soft_status_t WriteByte(uint8_t value)
     }
     Sda(1U);
     Delay();
-    if (SclHigh() != I2C2_SOFT_OK) return I2C2_SOFT_TIMEOUT;
+    if (SclHigh() != I2C2_SOFT_OK)
+        return I2C2_SOFT_TIMEOUT;
     Delay();
     ack = (uint8_t)((I2C2_GPIO->IDR & SDA_MASK) == 0U);
     SclLow();
     Delay();
     return (ack != 0U) ? I2C2_SOFT_OK : I2C2_SOFT_NACK;
 }
+
 
 static i2c2_soft_status_t ReadByte(uint8_t *value, uint8_t ack)
 {
@@ -98,7 +113,8 @@ static i2c2_soft_status_t ReadByte(uint8_t *value, uint8_t ack)
     for (bit = 0U; bit < 8U; bit++)
     {
         Delay();
-        if (SclHigh() != I2C2_SOFT_OK) return I2C2_SOFT_TIMEOUT;
+        if (SclHigh() != I2C2_SOFT_OK)
+            return I2C2_SOFT_TIMEOUT;
         Delay();
         result = (uint8_t)((result << 1U) | ((I2C2_GPIO->IDR & SDA_MASK) != 0U));
         SclLow();
@@ -106,7 +122,8 @@ static i2c2_soft_status_t ReadByte(uint8_t *value, uint8_t ack)
     }
     Sda((uint8_t)(ack == 0U));
     Delay();
-    if (SclHigh() != I2C2_SOFT_OK) return I2C2_SOFT_TIMEOUT;
+    if (SclHigh() != I2C2_SOFT_OK)
+        return I2C2_SOFT_TIMEOUT;
     Delay();
     SclLow();
     Sda(1U);
@@ -114,6 +131,7 @@ static i2c2_soft_status_t ReadByte(uint8_t *value, uint8_t ack)
     *value = result;
     return I2C2_SOFT_OK;
 }
+
 
 /* Настраивает PB8/PB9 как open-drain для отдельной шины EEPROM. */
 void I2C2_Soft_Init(void)
@@ -124,17 +142,21 @@ void I2C2_Soft_Init(void)
     I2C2_GPIO->CRH = (I2C2_GPIO->CRH & ~0xFFUL) | 0x66UL;
 }
 
+
 /* Проверяет ACK адреса без записи данных в память. */
 i2c2_soft_status_t I2C2_Soft_Probe(uint8_t address)
 {
     i2c2_soft_status_t status;
     i2c2_soft_status_t stopped;
-    if (address > 0x7FU) return I2C2_SOFT_ARG_ERROR;
+    if (address > 0x7FU)
+        return I2C2_SOFT_ARG_ERROR;
     status = Start();
-    if (status == I2C2_SOFT_OK) status = WriteByte((uint8_t)(address << 1U));
+    if (status == I2C2_SOFT_OK)
+        status = WriteByte((uint8_t)(address << 1U));
     stopped = Stop();
     return (status == I2C2_SOFT_OK) ? stopped : status;
 }
+
 
 /* STOP запускает внутреннюю запись EEPROM; ожидание готовности — задача вызывающего. */
 i2c2_soft_status_t I2C2_Soft_Write(uint8_t address, const uint8_t *data, uint16_t length)
@@ -142,17 +164,21 @@ i2c2_soft_status_t I2C2_Soft_Write(uint8_t address, const uint8_t *data, uint16_
     i2c2_soft_status_t status;
     i2c2_soft_status_t stopped;
     uint16_t i;
-    if (address > 0x7FU || data == 0 || length == 0U) return I2C2_SOFT_ARG_ERROR;
+    if (address > 0x7FU || data == 0 || length == 0U)
+        return I2C2_SOFT_ARG_ERROR;
     status = Start();
-    if (status == I2C2_SOFT_OK) status = WriteByte((uint8_t)((uint32_t)address << 1U));
-    for (i = 0U; status == I2C2_SOFT_OK && i < length; i++) status = WriteByte(data[i]);
+    if (status == I2C2_SOFT_OK)
+        status = WriteByte((uint8_t)((uint32_t)address << 1U));
+    for (i = 0U; status == I2C2_SOFT_OK && i < length; i++)
+        status = WriteByte(data[i]);
     stopped = Stop();
     return (status == I2C2_SOFT_OK) ? stopped : status;
 }
 
+
 /* Передаёт префикс, repeated START и чтение; последний байт завершается NACK. */
-i2c2_soft_status_t I2C2_Soft_WriteRead(uint8_t address, const uint8_t *prefix,
-                                    uint16_t prefix_len, uint8_t *data, uint16_t length)
+i2c2_soft_status_t I2C2_Soft_WriteRead(uint8_t address, const uint8_t *prefix, uint16_t prefix_len, uint8_t *data,
+                                       uint16_t length)
 {
     i2c2_soft_status_t status;
     i2c2_soft_status_t stopped;
@@ -160,12 +186,15 @@ i2c2_soft_status_t I2C2_Soft_WriteRead(uint8_t address, const uint8_t *prefix,
     if (address > 0x7FU || prefix == 0 || prefix_len == 0U || data == 0 || length == 0U)
         return I2C2_SOFT_ARG_ERROR;
     status = Start();
-    if (status == I2C2_SOFT_OK) status = WriteByte((uint8_t)(address << 1U));
+    if (status == I2C2_SOFT_OK)
+        status = WriteByte((uint8_t)(address << 1U));
     for (i = 0U; status == I2C2_SOFT_OK && i < prefix_len; i++)
         status = WriteByte(prefix[i]);
     /* Repeated START: the prefix selects the address without programming data. */
-    if (status == I2C2_SOFT_OK) status = Start();
-    if (status == I2C2_SOFT_OK) status = WriteByte((uint8_t)(((uint32_t)address << 1U) | 1U));
+    if (status == I2C2_SOFT_OK)
+        status = Start();
+    if (status == I2C2_SOFT_OK)
+        status = WriteByte((uint8_t)(((uint32_t)address << 1U) | 1U));
     for (i = 0U; status == I2C2_SOFT_OK && i < length; i++)
         status = ReadByte(&data[i], (uint8_t)(i + 1U < length));
     stopped = Stop();

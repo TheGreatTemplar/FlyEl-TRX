@@ -1,6 +1,11 @@
 /* Pure-C checks of the production EEPROM driver; I2C is replaced by a bus stub. */
 #include "at24c256.c"
-#define CHECK(expr) do { if (!(expr)) return __LINE__; } while (0)
+#define CHECK(expr)                                                                                                    \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        if (!(expr))                                                                                                   \
+            return __LINE__;                                                                                           \
+    } while (0)
 
 static uint8_t reply_address;
 static uint8_t probe_count;
@@ -17,24 +22,31 @@ i2c2_soft_status_t I2C2_Soft_Write(uint8_t address, const uint8_t *data, uint16_
 {
     (void)address;
     write_count++;
-    sent_high = data[0]; sent_low = data[1]; sent_length = length;
-    write_first = data[2]; write_last = data[length - 1U];
+    sent_high = data[0];
+    sent_low = data[1];
+    sent_length = length;
+    write_first = data[2];
+    write_last = data[length - 1U];
     return bus_failure;
 }
+
 
 i2c2_soft_status_t I2C2_Soft_Probe(uint8_t address)
 {
     probe_count++;
-    if (bus_failure != I2C2_SOFT_OK) return bus_failure;
+    if (bus_failure != I2C2_SOFT_OK)
+        return bus_failure;
     return (address == reply_address) ? I2C2_SOFT_OK : I2C2_SOFT_NACK;
 }
 
-i2c2_soft_status_t I2C2_Soft_WriteRead(uint8_t address, const uint8_t *prefix,
-                                    uint16_t prefix_len, uint8_t *data, uint16_t length)
+
+i2c2_soft_status_t I2C2_Soft_WriteRead(uint8_t address, const uint8_t *prefix, uint16_t prefix_len, uint8_t *data,
+                                       uint16_t length)
 {
     (void)address;
     (void)data;
-    if (prefix_len != 2U) return I2C2_SOFT_ARG_ERROR;
+    if (prefix_len != 2U)
+        return I2C2_SOFT_ARG_ERROR;
     read_count++;
     sent_high = prefix[0];
     sent_low = prefix[1];
@@ -42,12 +54,14 @@ i2c2_soft_status_t I2C2_Soft_WriteRead(uint8_t address, const uint8_t *prefix,
     return bus_failure;
 }
 
+
 int test_crc_check_vector(void)
 {
     static const uint8_t text[] = "123456789";
     CHECK(AT24C256_Crc16Update(0xFFFFU, text, 9U) == 0x29B1U);
     return 0;
 }
+
 
 int test_crc_incremental(void)
 {
@@ -58,33 +72,43 @@ int test_crc_incremental(void)
     return 0;
 }
 
+
 int test_find_address_range(void)
 {
     uint8_t address = 0U;
-    reply_address = 0x57U; probe_count = 0U; bus_failure = I2C2_SOFT_OK;
+    reply_address = 0x57U;
+    probe_count = 0U;
+    bus_failure = I2C2_SOFT_OK;
     CHECK(AT24C256_Find(&address) == I2C2_SOFT_OK);
     CHECK(address == 0x57U && probe_count == 8U);
     return 0;
 }
 
+
 int test_find_missing_or_stuck_bus(void)
 {
     uint8_t address = 0U;
-    reply_address = 0U; probe_count = 0U; bus_failure = I2C2_SOFT_OK;
+    reply_address = 0U;
+    probe_count = 0U;
+    bus_failure = I2C2_SOFT_OK;
     CHECK(AT24C256_Find(&address) == I2C2_SOFT_NACK && probe_count == 8U);
-    probe_count = 0U; bus_failure = I2C2_SOFT_TIMEOUT;
+    probe_count = 0U;
+    bus_failure = I2C2_SOFT_TIMEOUT;
     CHECK(AT24C256_Find(&address) == I2C2_SOFT_TIMEOUT && probe_count == 1U);
     return 0;
 }
 
+
 int test_read_address_bytes(void)
 {
     uint8_t data[128];
-    bus_failure = I2C2_SOFT_OK; read_count = 0U;
+    bus_failure = I2C2_SOFT_OK;
+    read_count = 0U;
     CHECK(AT24C256_Read(0x50U, 0x7F80U, data, sizeof(data)) == I2C2_SOFT_OK);
     CHECK(read_count == 1U && sent_high == 0x7FU && sent_low == 0x80U && sent_length == 128U);
     return 0;
 }
+
 
 int test_read_rejects_bad_ranges(void)
 {
@@ -98,10 +122,12 @@ int test_read_rejects_bad_ranges(void)
     return 0;
 }
 
+
 int test_page_write_address_and_limits(void)
 {
-    uint8_t data[2] = { 0x12U, 0x34U };
-    write_count = 0U; bus_failure = I2C2_SOFT_OK;
+    uint8_t data[2] = {0x12U, 0x34U};
+    write_count = 0U;
+    bus_failure = I2C2_SOFT_OK;
     CHECK(AT24C256_WritePage(0x57U, 0x7FFEU, data, 2U) == I2C2_SOFT_OK);
     CHECK(write_count == 1U && sent_high == 0x7FU && sent_low == 0xFEU);
     CHECK(sent_length == 4U && write_first == 0x12U && write_last == 0x34U);

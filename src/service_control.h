@@ -4,7 +4,15 @@
 #include "input.h"
 #include "service_catalog.h"
 
-enum { SERVICE_ROOT, SERVICE_SECTION, SERVICE_BAND, SERVICE_VIEW, SERVICE_UART, SERVICE_KEY_TEST };
+enum
+{
+    SERVICE_ROOT,
+    SERVICE_SECTION,
+    SERVICE_BAND,
+    SERVICE_VIEW,
+    SERVICE_UART,
+    SERVICE_KEY_TEST
+};
 void Service_Init(void);
 /* Открывает SERVICE только вне TX. Вызывается из основного цикла после сочетания. */
 uint8_t Service_Open(void);

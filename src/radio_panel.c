@@ -11,6 +11,7 @@ uint8_t RadioPanel_AttDb(uint8_t mask)
     return (uint8_t)((mask & 7U) * 6U);
 }
 
+
 static void UpdateGain(void)
 {
     /* Усиление предусилителя ещё не задано: рамка показывает P.AMP либо ослабление. */
@@ -18,12 +19,14 @@ static void UpdateGain(void)
     menu.need_redraw = 1U;
 }
 
+
 void RadioPanel_Init(void)
 {
     memset(&panel, 0, sizeof(panel));
     panel.nb_level = 50U;
     UpdateGain();
 }
+
 
 void RadioPanel_CycleAtt(void)
 {
@@ -34,16 +37,19 @@ void RadioPanel_CycleAtt(void)
         /* 6U, 7U, */ /* -36, -42 дБ: вернуть в цикл после проверки. */
     };
     uint8_t next = (uint8_t)(panel.att_mask + 1U);
-    if (next >= sizeof(masks) / sizeof(masks[0])) next = 0U;
+    if (next >= sizeof(masks) / sizeof(masks[0]))
+        next = 0U;
     panel.att_mask = masks[next];
     UpdateGain();
 }
+
 
 void RadioPanel_TogglePreamp(void)
 {
     panel.preamp ^= 1U;
     UpdateGain();
 }
+
 
 void RadioPanel_Tuner(uint8_t long_press)
 {
@@ -52,9 +58,13 @@ void RadioPanel_Tuner(uint8_t long_press)
     menu.need_redraw = 1U;
 }
 
+
 void RadioPanel_Task(void)
 {
     /* Пока нет сигнала результата от тюнера, запрос настройки истекает через 20 с. */
     if (panel.tuner == 2U && (uint32_t)(App_GetTick500us() - panel.tuner_tick) >= 40000U)
-    { panel.tuner = 0U; menu.need_redraw = 1U; }
+    {
+        panel.tuner = 0U;
+        menu.need_redraw = 1U;
+    }
 }

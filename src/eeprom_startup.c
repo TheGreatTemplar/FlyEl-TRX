@@ -13,7 +13,6 @@ static uint16_t eeprom_crc;
 static uint32_t eeprom_result_tick;
 
 
-
 static uint8_t redraw_requested;
 
 static void EepromTest_Finish(uint8_t ok)
@@ -41,6 +40,7 @@ static void EepromTest_Finish(uint8_t ok)
     redraw_requested = 1U;
 }
 
+
 void EEPROM_TestInit(void)
 {
     eeprom_status[0] = '\0';
@@ -51,6 +51,7 @@ void EEPROM_TestInit(void)
     eeprom_check_running = 1U;
     eeprom_result_visible = 0U;
 }
+
 
 static void RunTest(void)
 {
@@ -72,14 +73,14 @@ static void RunTest(void)
         if (eeprom_offset == AT24C256_CAPACITY)
             EepromTest_Finish(1U);
     }
-    else if (eeprom_result_visible != 0U &&
-             (uint32_t)(App_GetTick500us() - eeprom_result_tick) >= 6000U)
+    else if (eeprom_result_visible != 0U && (uint32_t)(App_GetTick500us() - eeprom_result_tick) >= 6000U)
     {
         eeprom_result_visible = 0U;
         eeprom_status[0] = '\0';
         redraw_requested = 1U;
     }
 }
+
 
 /* Сообщает, изменилось ли поле диагностики с предыдущего прохода. */
 uint8_t EEPROM_TestTask(void)
@@ -91,10 +92,15 @@ uint8_t EEPROM_TestTask(void)
     return changed;
 }
 
+
 const char *EEPROM_TestStatus(void)
 {
     return eeprom_status;
 }
 
+
 /* Загрузка/запись каналов начинается только после неизменяемого стартового CRC. */
-uint8_t EEPROM_TestBusy(void) { return eeprom_check_running; }
+uint8_t EEPROM_TestBusy(void)
+{
+    return eeprom_check_running;
+}

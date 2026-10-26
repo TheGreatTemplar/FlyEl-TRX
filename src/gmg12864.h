@@ -14,22 +14,22 @@
  * PA5 = SCK
  * PA7 = MOSI
  */
-#define LCD_CS_GPIO                 GPIOB
-#define LCD_RST_GPIO                GPIOB
-#define LCD_DC_GPIO                 GPIOB
+#define LCD_CS_GPIO GPIOB
+#define LCD_RST_GPIO GPIOB
+#define LCD_DC_GPIO GPIOB
 
-#define LCD_CS_PIN                  10U
-#define LCD_RST_PIN                 11U
-#define LCD_DC_PIN                  12U
+#define LCD_CS_PIN 10U
+#define LCD_RST_PIN 11U
+#define LCD_DC_PIN 12U
 
-#define LCD_WIDTH                   128U
-#define LCD_HEIGHT                  64U
+#define LCD_WIDTH 128U
+#define LCD_HEIGHT 64U
 
-#define PX_OFF                      0U
-#define PX_ON                       1U
+#define PX_OFF 0U
+#define PX_ON 1U
 
-#define CH_UNINVERT                 0U
-#define CH_INVERT                   1U
+#define CH_UNINVERT 0U
+#define CH_INVERT 1U
 
 void LCD_GPIO_Init(void);
 void LCD_Init(void);

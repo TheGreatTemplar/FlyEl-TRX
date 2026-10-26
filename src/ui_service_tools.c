@@ -21,7 +21,8 @@ void ServiceTools_DrawUart(void)
         uint8_t index = (uint8_t)(first + row);
         uint8_t y = (uint8_t)(12U + row * 10U);
         uint8_t invert = (index == selected) ? CH_INVERT : CH_UNINVERT;
-        if (index == selected) LCD_FillRectangle(0U, (uint8_t)(y - 1U), 127U, 8U, PX_ON);
+        if (index == selected)
+            LCD_FillRectangle(0U, (uint8_t)(y - 1U), 127U, 8U, PX_ON);
         ServiceUart_Value(index, value);
         LCD_Print5x7(1U, y, ServiceUart_Label(index), 1U, invert);
         LCD_Print5x7(60U, y, value, 1U, invert);
@@ -30,13 +31,16 @@ void ServiceTools_DrawUart(void)
     LCD_Update();
 }
 
+
 static void HexMask(char *text, uint32_t value)
 {
     uint8_t i;
     static const char digits[] = "0123456789ABCDEF";
-    for (i = 0U; i < 7U; i++) text[i] = digits[(value >> ((6U - i) * 4U)) & 15U];
+    for (i = 0U; i < 7U; i++)
+        text[i] = digits[(value >> ((6U - i) * 4U)) & 15U];
     text[7] = '\0';
 }
+
 
 void ServiceTools_DrawKeyboard(void)
 {
@@ -46,12 +50,22 @@ void ServiceTools_DrawKeyboard(void)
     LCD_ClearBuffer();
     LCD_Print5x7(0U, 0U, "KEYBOARD TEST", 1U, CH_UNINVERT);
     LCD_Print5x7(0U, 11U, (key == INPUT_KEY_COUNT) ? "PRESS A KEY" : Input_KeyName(key), 1U, CH_UNINVERT);
-    text[0] = '\0'; Text_Append(text, events[KeyTest_Event()]); Text_Append(text, " ");
-    Text_U32ToDec(number, KeyTest_DurationMs(), 1U); Text_Append(text, number); Text_Append(text, " MS");
+    text[0] = '\0';
+    Text_Append(text, events[KeyTest_Event()]);
+    Text_Append(text, " ");
+    Text_U32ToDec(number, KeyTest_DurationMs(), 1U);
+    Text_Append(text, number);
+    Text_Append(text, " MS");
     LCD_Print5x7(0U, 22U, text, 1U, CH_UNINVERT);
-    text[0] = '\0'; Text_Append(text, "RAW "); HexMask(number, KeyTest_RawMask()); Text_Append(text, number);
+    text[0] = '\0';
+    Text_Append(text, "RAW ");
+    HexMask(number, KeyTest_RawMask());
+    Text_Append(text, number);
     LCD_Print5x7(0U, 33U, text, 1U, CH_UNINVERT);
-    text[0] = '\0'; Text_Append(text, "KEY "); HexMask(number, KeyTest_DownMask()); Text_Append(text, number);
+    text[0] = '\0';
+    Text_Append(text, "KEY ");
+    HexMask(number, KeyTest_DownMask());
+    Text_Append(text, number);
     LCD_Print5x7(0U, 44U, text, 1U, CH_UNINVERT);
     LCD_Print5x7(0U, 56U, (KeyTest_Ready() != 0U) ? "UP OR NR HOLD 2S:OUT" : "RELEASE ALL KEYS", 1U, CH_UNINVERT);
     LCD_Update();

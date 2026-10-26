@@ -18,42 +18,11 @@
 
 void EXTI4_IRQHandler(void);
 
-static const int8_t encoder_transition_table[16] =
-{
-     0, -1,  1,  0,
-     1,  0,  0, -1,
-    -1,  0,  0,  1,
-     0,  1, -1,  0
-};
-static const char * const physical_key_names[27] =
-{
-    "Key_2_1",
-    "Key_2_2",
-    "Key_2_3",
-    "Key_4_1",
-    "Key_4_2",
-    "Key_4_3",
-    "Key_7_1",
-    "Key_7_2",
-    "Key_7_3",
-    "Key_10_1",
-    "Key_10_2",
-    "Key_10_3",
-    "Key_1_1",
-    "Key_1_2",
-    "Key_1_3",
-    "Key_5_1",
-    "Key_5_2",
-    "Key_5_3",
-    "Key_6_1",
-    "Key_6_2",
-    "Key_6_3",
-    "Key_9_1",
-    "Key_9_2",
-    "Key_9_3",
-    "Key_11_1",
-    "Key_11_2",
-    "Key_11_3",
+static const int8_t encoder_transition_table[16] = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0};
+static const char *const physical_key_names[27] = {
+    "Key_2_1",  "Key_2_2",  "Key_2_3",  "Key_4_1", "Key_4_2", "Key_4_3", "Key_7_1",  "Key_7_2",  "Key_7_3",
+    "Key_10_1", "Key_10_2", "Key_10_3", "Key_1_1", "Key_1_2", "Key_1_3", "Key_5_1",  "Key_5_2",  "Key_5_3",
+    "Key_6_1",  "Key_6_2",  "Key_6_3",  "Key_9_1", "Key_9_2", "Key_9_3", "Key_11_1", "Key_11_2", "Key_11_3",
 };
 
 static volatile int32_t encoder_steps;
@@ -84,6 +53,7 @@ static uint32_t Input_CriticalEnter(void)
     return primask;
 }
 
+
 /* Восстанавливает разрешение IRQ, только если оно было включено до входа. */
 static void Input_CriticalExit(uint32_t primask)
 {
@@ -92,6 +62,7 @@ static void Input_CriticalExit(uint32_t primask)
         __enable_irq();
     }
 }
+
 
 static volatile uint32_t *GPIO_CfgReg(GPIO_TypeDef *gpio, uint8_t pin, uint32_t *shift)
 {
@@ -105,6 +76,7 @@ static volatile uint32_t *GPIO_CfgReg(GPIO_TypeDef *gpio, uint8_t pin, uint32_t 
     return &gpio->CRH;
 }
 
+
 static void GPIO_ConfigInputPullup(GPIO_TypeDef *gpio, uint8_t pin)
 {
     volatile uint32_t *reg;
@@ -114,10 +86,11 @@ static void GPIO_ConfigInputPullup(GPIO_TypeDef *gpio, uint8_t pin)
 
     /* MODE = 00, CNF = 10: input with pull-up/pull-down. */
     *reg &= ~(0xFUL << shift);
-    *reg |=  (0x8UL << shift);
+    *reg |= (0x8UL << shift);
 
     gpio->BSRR = (uint32_t)(1UL << pin);
 }
+
 
 static void GPIO_ConfigPushPullOutput(GPIO_TypeDef *gpio, uint8_t pin)
 {
@@ -128,8 +101,9 @@ static void GPIO_ConfigPushPullOutput(GPIO_TypeDef *gpio, uint8_t pin)
 
     /* MODE = 10: output 2 MHz. CNF = 00: push-pull. */
     *reg &= ~(0xFUL << shift);
-    *reg |=  (0x2UL << shift);
+    *reg |= (0x2UL << shift);
 }
+
 
 static uint8_t GPIO_ReadPin(GPIO_TypeDef *gpio, uint8_t pin)
 {
@@ -141,10 +115,12 @@ static uint8_t GPIO_ReadPin(GPIO_TypeDef *gpio, uint8_t pin)
     return 0U;
 }
 
+
 static void GPIO_WriteLow(GPIO_TypeDef *gpio, uint8_t pin)
 {
     gpio->BRR = (uint32_t)(1UL << pin);
 }
+
 
 /* Получает двухбитное состояние фаз энкодера для таблицы переходов. */
 static uint8_t Encoder_ReadAB(void)
@@ -158,6 +134,7 @@ static uint8_t Encoder_ReadAB(void)
     return (uint8_t)((a << 1U) | b);
 }
 
+
 /* Даёт выходам счётчика время установиться после фронта CLK/RESET. */
 static void Keyboard_Settle(void)
 {
@@ -169,6 +146,7 @@ static void Keyboard_Settle(void)
     }
 }
 
+
 /* Выбирает Q0, в котором любая кнопка может сформировать запрос INT. */
 static void Keyboard_Reset(void)
 {
@@ -179,6 +157,7 @@ static void Keyboard_Reset(void)
     Keyboard_Settle();
 }
 
+
 /* Продвигает активный высокий выход CD4017 на следующую позицию. */
 static void Keyboard_Clock(void)
 {
@@ -187,12 +166,14 @@ static void Keyboard_Clock(void)
     KEY_CLK_GPIO->BRR = 1UL << KEY_CLK_PIN;
 }
 
+
 /* Считывает PB3–PB5 одновременно: низкий уровень в Q0 означает нажатую колонку. */
 static uint8_t Keyboard_ReadOuts(void)
 {
     /* OUT1..OUT3 are consecutive PB3..PB5. */
     return (uint8_t)((KEY_OUT_GPIO->IDR >> KEY_OUT_FIRST_PIN) & 7U);
 }
+
 
 /* Возвращает клавиатуру в ожидание; проверка уровня закрывает гонку при повторном разрешении EXTI. */
 static void Keyboard_ArmInterrupt(void)
@@ -213,6 +194,7 @@ static void Keyboard_ArmInterrupt(void)
     }
 }
 
+
 /* Маскирует INT и будит сканер; задержек и сканирования внутри обработчика нет. */
 void EXTI4_IRQHandler(void)
 {
@@ -224,6 +206,7 @@ void EXTI4_IRQHandler(void)
         keyboard_active = 1U;
     }
 }
+
 
 /* Подтверждает изменение после стабильных 10 мс; события возникают только на нажатие. */
 static void Keyboard_Debounce(uint32_t raw_mask)
@@ -242,8 +225,7 @@ static void Keyboard_Debounce(uint32_t raw_mask)
             key_last_raw[i] = raw;
             key_change_tick[i] = input_ticks;
         }
-        else if (key_state[i] != raw &&
-                 (uint32_t)(input_ticks - key_change_tick[i]) >= KEY_DEBOUNCE_TICKS)
+        else if (key_state[i] != raw && (uint32_t)(input_ticks - key_change_tick[i]) >= KEY_DEBOUNCE_TICKS)
         {
             key_state[i] = raw;
             if (raw != 0U && key_pressed_events[i] < 255U)
@@ -253,6 +235,7 @@ static void Keyboard_Debounce(uint32_t raw_mask)
         }
     }
 }
+
 
 /* Обрабатывает одну позицию CD4017; после устойчивого отпускания снова разрешает INT. */
 static void Keyboard_Poll500us(void)
@@ -304,6 +287,7 @@ static void Keyboard_Poll500us(void)
     }
 }
 
+
 /* Настраивает энкодер и CD4017, сбрасывает счётчик в Q0 и разрешает EXTI4. */
 void Input_Init(void)
 {
@@ -354,6 +338,7 @@ void Input_Init(void)
     Keyboard_ArmInterrupt();
 }
 
+
 /* Вызывается из TIM2 каждые 500 мкс: энкодер всегда, клавиатура только после INT. */
 void Input_Poll500us(void)
 {
@@ -396,6 +381,7 @@ void Input_Poll500us(void)
     }
 }
 
+
 /* Атомарно забирает накопленные щелчки; число переходов задаёт ENCODER_COUNTS_PER_STEP. */
 int32_t Input_GetEncoderSteps(void)
 {
@@ -411,6 +397,7 @@ int32_t Input_GetEncoderSteps(void)
 
     return steps;
 }
+
 
 /* Забирает одно событие нажатия после подавления дребезга. */
 uint8_t Input_KeyPressed(input_key_t key)
@@ -438,6 +425,7 @@ uint8_t Input_KeyPressed(input_key_t key)
     return result;
 }
 
+
 /* Возвращает подтверждённое состояние удержания без извлечения события. */
 uint8_t Input_KeyIsDown(input_key_t key)
 {
@@ -453,6 +441,7 @@ uint8_t Input_KeyIsDown(input_key_t key)
 
     return 0U;
 }
+
 
 char Input_KeyToChar(input_key_t key)
 {
@@ -484,11 +473,13 @@ char Input_KeyToChar(input_key_t key)
     return '\0';
 }
 
+
 /* Возвращает маску 27 физических клавиш последнего полного прохода. */
 uint32_t Input_GetRawKeyMask(void)
 {
     return key_raw_mask_debug;
 }
+
 
 /* Возвращает Key_A_B: A — физический вывод CD4017, B — номер OUT. */
 const char *Input_KeyName(input_key_t key)

@@ -1,11 +1,11 @@
 #include "adc1_app.h"
 
-#define ADC_CR2_ADON_BIT            (1UL << 0)
-#define ADC_CR2_CAL_BIT             (1UL << 2)
-#define ADC_CR2_RSTCAL_BIT          (1UL << 3)
-#define ADC_CR2_EXTSEL_SWSTART      (7UL << 17)
-#define ADC_CR2_EXTTRIG_BIT         (1UL << 20)
-#define ADC_CR2_SWSTART_BIT         (1UL << 22)
+#define ADC_CR2_ADON_BIT (1UL << 0)
+#define ADC_CR2_CAL_BIT (1UL << 2)
+#define ADC_CR2_RSTCAL_BIT (1UL << 3)
+#define ADC_CR2_EXTSEL_SWSTART (7UL << 17)
+#define ADC_CR2_EXTTRIG_BIT (1UL << 20)
+#define ADC_CR2_SWSTART_BIT (1UL << 22)
 
 static void ADC_ShortDelay(void)
 {
@@ -16,6 +16,7 @@ static void ADC_ShortDelay(void)
         __NOP();
     }
 }
+
 
 /* Настраивает PA0/PA1, время выборки и калибровку ADC1 перед измерениями. */
 void ADC1_App_Init(void)
@@ -41,7 +42,7 @@ void ADC1_App_Init(void)
      * SMP0 = 111, SMP1 = 111.
      */
     ADC1->SMPR2 &= ~((7UL << 0U) | (7UL << 3U));
-    ADC1->SMPR2 |=  ((7UL << 0U) | (7UL << 3U));
+    ADC1->SMPR2 |= ((7UL << 0U) | (7UL << 3U));
 
     ADC1->CR1 = 0U;
     ADC1->CR2 = ADC_CR2_EXTSEL_SWSTART | ADC_CR2_EXTTRIG_BIT;
@@ -69,6 +70,7 @@ void ADC1_App_Init(void)
     }
 }
 
+
 /* Выполняет одну блокирующую конверсию канала; возвращает 12-битный отсчёт. */
 uint16_t ADC1_App_ReadRaw(adc_app_channel_t channel)
 {
@@ -94,6 +96,7 @@ uint16_t ADC1_App_ReadRaw(adc_app_channel_t channel)
 
     return (uint16_t)(ADC1->DR & 0x0FFFU);
 }
+
 
 /* Переводит отсчёт в мВ по переданному опорному напряжению. */
 uint16_t ADC1_App_ReadMv(adc_app_channel_t channel, uint16_t vref_mv)

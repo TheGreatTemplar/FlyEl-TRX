@@ -61,6 +61,7 @@ void LCD_DrawChar8(uint8_t x_pos, uint8_t y_pos, uint8_t symbol, uint8_t invert)
     }
 }
 
+
 /* Печатает Tahoma из нуль-терминированной строки; инверсия меняет цвет букв/фона. */
 void LCD_Print(uint8_t x_pos, uint8_t y_pos, const char *text, uint8_t spacing, uint8_t invert)
 {
@@ -81,6 +82,7 @@ void LCD_Print(uint8_t x_pos, uint8_t y_pos, const char *text, uint8_t spacing, 
     }
 }
 
+
 static const font_status_5x7_glyph_t *LCD_FindStatusGlyph(uint8_t symbol)
 {
     uint32_t i;
@@ -93,6 +95,7 @@ static const font_status_5x7_glyph_t *LCD_FindStatusGlyph(uint8_t symbol)
     }
     return &font_status_5x7[0];
 }
+
 
 uint8_t LCD_GetText5x7Width(const char *text, uint8_t spacing)
 {
@@ -112,6 +115,7 @@ uint8_t LCD_GetText5x7Width(const char *text, uint8_t spacing)
     }
     return (uint8_t)((width > LCD_WIDTH) ? LCD_WIDTH : width);
 }
+
 
 /* Печатает компактные статусные подписи с отсечением по границам дисплея. */
 void LCD_Print5x7(uint8_t x, uint8_t y, const char *text, uint8_t spacing, uint8_t invert)
@@ -142,6 +146,7 @@ void LCD_Print5x7(uint8_t x, uint8_t y, const char *text, uint8_t spacing, uint8
         text++;
     }
 }
+
 
 uint8_t LCD_GetTextWidth(const char *text, uint8_t spacing)
 {

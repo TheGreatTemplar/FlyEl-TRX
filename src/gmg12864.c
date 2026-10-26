@@ -39,45 +39,54 @@ static void LCD_DelayMs(uint32_t ms)
     }
 }
 
+
 static void LCD_PinHigh(GPIO_TypeDef *gpio, uint8_t pin)
 {
     gpio->BSRR = (uint32_t)(1UL << pin);
 }
+
 
 static void LCD_PinLow(GPIO_TypeDef *gpio, uint8_t pin)
 {
     gpio->BRR = (uint32_t)(1UL << pin);
 }
 
+
 static void LCD_CS_Active(void)
 {
     LCD_PinLow(LCD_CS_GPIO, LCD_CS_PIN);
 }
+
 
 static void LCD_CS_Idle(void)
 {
     LCD_PinHigh(LCD_CS_GPIO, LCD_CS_PIN);
 }
 
+
 static void LCD_RST_Active(void)
 {
     LCD_PinLow(LCD_RST_GPIO, LCD_RST_PIN);
 }
+
 
 static void LCD_RST_Idle(void)
 {
     LCD_PinHigh(LCD_RST_GPIO, LCD_RST_PIN);
 }
 
+
 static void LCD_DC_Command(void)
 {
     LCD_PinLow(LCD_DC_GPIO, LCD_DC_PIN);
 }
 
+
 static void LCD_DC_Data(void)
 {
     LCD_PinHigh(LCD_DC_GPIO, LCD_DC_PIN);
 }
+
 
 static void LCD_SendCommand(uint8_t command)
 {
@@ -86,11 +95,13 @@ static void LCD_SendCommand(uint8_t command)
     LCD_DC_Data();
 }
 
+
 static void LCD_SendData(uint8_t data)
 {
     LCD_DC_Data();
     (void)SPI1_SendByte(data);
 }
+
 
 static void LCD_SetX(uint8_t x)
 {
@@ -98,10 +109,12 @@ static void LCD_SetX(uint8_t x)
     LCD_SendCommand((uint8_t)(x & 0x0FU));
 }
 
+
 static void LCD_SetY(uint8_t y)
 {
     LCD_SendCommand((uint8_t)((y & 0x07U) | 0xB0U));
 }
+
 
 static void LCD_GPIO_SetOutput(GPIO_TypeDef *gpio, uint8_t pin)
 {
@@ -120,8 +133,9 @@ static void LCD_GPIO_SetOutput(GPIO_TypeDef *gpio, uint8_t pin)
     }
 
     *reg &= ~(0xFUL << shift);
-    *reg |=  (0x2UL << shift);  /* output push-pull, 2 MHz */
+    *reg |= (0x2UL << shift); /* output push-pull, 2 MHz */
 }
+
 
 /* Настраивает CS/RST/DC и устанавливает неактивные уровни сигналов LCD. */
 void LCD_GPIO_Init(void)
@@ -137,11 +151,13 @@ void LCD_GPIO_Init(void)
     LCD_DC_Data();
 }
 
+
 /* Очищает только RAM-буфер; для обновления экрана нужен LCD_Update. */
 void LCD_ClearBuffer(void)
 {
     memset(lcd_buffer, 0x00, sizeof(lcd_buffer));
 }
+
 
 /* Передаёт весь буфер 128x64 по восьми страницам SPI; из ISR не вызывается. */
 void LCD_Update(void)
@@ -164,6 +180,7 @@ void LCD_Update(void)
 
     LCD_CS_Idle();
 }
+
 
 /* Сбрасывает LCD, задаёт контраст/ориентацию и очищает кадр; TIM2 уже должен работать. */
 void LCD_Init(void)
@@ -212,6 +229,7 @@ void LCD_Init(void)
     LCD_Update();
 }
 
+
 /* Меняет пиксель RAM-буфера с отсечением координат за границами экрана. */
 void LCD_DrawPixel(uint8_t x, uint8_t y, uint8_t color)
 {
@@ -235,6 +253,7 @@ void LCD_DrawPixel(uint8_t x, uint8_t y, uint8_t color)
         lcd_buffer[pos] &= (uint8_t)~mask;
     }
 }
+
 
 void LCD_InvertBufferRange(uint16_t start, uint16_t end)
 {
@@ -293,6 +312,7 @@ void LCD_DrawLine(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t color)
     }
 }
 
+
 void LCD_DrawRectangle(uint8_t x, uint8_t y, uint8_t width, uint8_t height, uint8_t color)
 {
     LCD_DrawLine(x, y, (uint8_t)(x + width), y, color);
@@ -300,6 +320,7 @@ void LCD_DrawRectangle(uint8_t x, uint8_t y, uint8_t width, uint8_t height, uint
     LCD_DrawLine(x, y, x, (uint8_t)(y + height), color);
     LCD_DrawLine((uint8_t)(x + width), y, (uint8_t)(x + width), (uint8_t)(y + height), color);
 }
+
 
 /* Рисует заполненную область: width/height включительны, 1x1 означает 2x2 пикселя. */
 void LCD_FillRectangle(uint8_t x, uint8_t y, uint8_t width, uint8_t height, uint8_t color)
@@ -311,6 +332,7 @@ void LCD_FillRectangle(uint8_t x, uint8_t y, uint8_t width, uint8_t height, uint
         LCD_DrawLine(x, (uint8_t)(y + i), (uint8_t)(x + width), (uint8_t)(y + i), color);
     }
 }
+
 
 void LCD_DrawCircle(uint8_t x, uint8_t y, uint8_t radius, uint8_t color)
 {
@@ -354,6 +376,7 @@ void LCD_DrawCircle(uint8_t x, uint8_t y, uint8_t radius, uint8_t color)
         LCD_DrawPixel((uint8_t)(x - y0), (uint8_t)(y - x0), color);
     }
 }
+
 
 void LCD_FillCircle(int8_t x, int8_t y, int8_t radius, uint8_t color)
 {

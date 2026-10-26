@@ -16,8 +16,18 @@
 #error Channel storage exceeds EEPROM
 #endif
 
-enum { STORE_WAIT_CRC, STORE_FIND, STORE_LOAD_A, STORE_LOAD_B,
-       STORE_IDLE, STORE_WRITE, STORE_WAIT_WRITE, STORE_VERIFY, STORE_ERROR };
+enum
+{
+    STORE_WAIT_CRC,
+    STORE_FIND,
+    STORE_LOAD_A,
+    STORE_LOAD_B,
+    STORE_IDLE,
+    STORE_WRITE,
+    STORE_WAIT_WRITE,
+    STORE_VERIFY,
+    STORE_ERROR
+};
 static radio_preset_t presets[MEMORY_CHANNEL_COUNT];
 static uint32_t generations[MEMORY_CHANNEL_COUNT];
 static uint8_t used[MEMORY_CHANNEL_COUNT];
@@ -42,11 +52,13 @@ static uint16_t Offset(uint8_t channel, uint8_t slot)
     return (uint16_t)(MEMORY_EEPROM_BASE + (uint32_t)channel * 128U + (uint32_t)slot * 64U);
 }
 
+
 static void Message(const char *text)
 {
     message = text;
     message_tick = App_GetTick500us();
 }
+
 
 void MemoryStore_Init(void)
 {
@@ -54,9 +66,12 @@ void MemoryStore_Init(void)
     memset(generations, 0, sizeof(generations));
     memset(slots, 0, sizeof(slots));
     state = STORE_WAIT_CRC;
-    loaded = 0U; load_channel = 0U; message = "";
+    loaded = 0U;
+    load_channel = 0U;
+    message = "";
     saved_event = 0U;
 }
+
 
 static void Fail(void)
 {
@@ -64,6 +79,7 @@ static void Fail(void)
     state = (loaded != 0U) ? STORE_IDLE : STORE_ERROR;
     Message("MEM ERR");
 }
+
 
 static uint8_t LoadSlot(void)
 {
@@ -74,27 +90,38 @@ static uint8_t LoadSlot(void)
     uint8_t slot = (uint8_t)(state == STORE_LOAD_B);
     uint8_t valid;
     if (AT24C256_Read(address, Offset(load_channel, slot), data, sizeof(data)) != I2C2_SOFT_OK)
-    { Fail(); return 1U; }
+    {
+        Fail();
+        return 1U;
+    }
     valid = MemoryRecord_Decode(data, load_channel, &generation, &preset, &occupied);
-    if (slot == 0U) load_a_valid = valid;
-    if (valid != 0U && (slot == 0U || load_a_valid == 0U ||
-                        MemoryRecord_Newer(generation, generations[load_channel]) != 0U))
+    if (slot == 0U)
+        load_a_valid = valid;
+    if (valid != 0U &&
+        (slot == 0U || load_a_valid == 0U || MemoryRecord_Newer(generation, generations[load_channel]) != 0U))
     {
         generations[load_channel] = generation;
         used[load_channel] = occupied;
         slots[load_channel] = slot;
-        if (occupied != 0U) presets[load_channel] = preset;
+        if (occupied != 0U)
+            presets[load_channel] = preset;
     }
-    if (slot == 0U) state = STORE_LOAD_B;
+    if (slot == 0U)
+        state = STORE_LOAD_B;
     else
     {
         load_channel++;
         if (load_channel == MEMORY_CHANNEL_COUNT)
-        { loaded = 1U; state = STORE_IDLE; return 1U; }
+        {
+            loaded = 1U;
+            state = STORE_IDLE;
+            return 1U;
+        }
         state = STORE_LOAD_A;
     }
     return 0U;
 }
+
 
 static uint8_t VerifyWrite(void)
 {
@@ -105,76 +132,127 @@ static uint8_t VerifyWrite(void)
     if (AT24C256_Read(address, Offset(write_channel, write_slot), data, sizeof(data)) != I2C2_SOFT_OK ||
         memcmp(data, pending, sizeof(data)) != 0 ||
         MemoryRecord_Decode(data, write_channel, &generation, &preset, &occupied) == 0U)
-    { Fail(); return 1U; }
+    {
+        Fail();
+        return 1U;
+    }
     generations[write_channel] = generation;
     slots[write_channel] = write_slot;
     used[write_channel] = occupied;
-    if (occupied != 0U) presets[write_channel] = preset;
+    if (occupied != 0U)
+        presets[write_channel] = preset;
     state = STORE_IDLE;
     Message((occupied != 0U) ? "SAVED" : "BLANK");
     if (occupied != 0U)
-    { saved_channel = write_channel; saved_event = 1U; }
+    {
+        saved_channel = write_channel;
+        saved_event = 1U;
+    }
     return 1U;
 }
+
 
 uint8_t MemoryStore_Task(void)
 {
     uint32_t now = App_GetTick500us();
     i2c2_soft_status_t status;
-    if (UARTStore_Busy() != 0U) return 0U;
+    if (UARTStore_Busy() != 0U)
+        return 0U;
     if (message[0] != '\0' && (uint32_t)(now - message_tick) >= 6000U)
-    { message = ""; return 1U; }
+    {
+        message = "";
+        return 1U;
+    }
     switch (state)
     {
         case STORE_WAIT_CRC:
-            if (EEPROM_TestBusy() == 0U) state = STORE_FIND;
+            if (EEPROM_TestBusy() == 0U)
+                state = STORE_FIND;
             break;
         case STORE_FIND:
-            if (AT24C256_Find(&address) != I2C2_SOFT_OK) { Fail(); return 1U; }
+            if (AT24C256_Find(&address) != I2C2_SOFT_OK)
+            {
+                Fail();
+                return 1U;
+            }
             state = STORE_LOAD_A;
             break;
         case STORE_LOAD_A:
-        case STORE_LOAD_B: return LoadSlot();
+        case STORE_LOAD_B:
+            return LoadSlot();
         case STORE_WRITE:
-            if (AT24C256_WritePage(address, Offset(write_channel, write_slot), pending,
-                                   sizeof(pending)) != I2C2_SOFT_OK)
-            { Fail(); return 1U; }
-            wait_tick = App_GetTick500us(); poll_tick = wait_tick;
+            if (AT24C256_WritePage(address, Offset(write_channel, write_slot), pending, sizeof(pending)) !=
+                I2C2_SOFT_OK)
+            {
+                Fail();
+                return 1U;
+            }
+            wait_tick = App_GetTick500us();
+            poll_tick = wait_tick;
             state = STORE_WAIT_WRITE;
             break;
         case STORE_WAIT_WRITE:
-            if ((uint32_t)(now - wait_tick) >= 40U) { Fail(); return 1U; }
+            if ((uint32_t)(now - wait_tick) >= 40U)
+            {
+                Fail();
+                return 1U;
+            }
             /* Максимум один ACK-poll за миллисекунду, без задержки основного цикла. */
-            if ((uint32_t)(now - wait_tick) < 10U || (uint32_t)(now - poll_tick) < 2U) break;
+            if ((uint32_t)(now - wait_tick) < 10U || (uint32_t)(now - poll_tick) < 2U)
+                break;
             poll_tick = now;
             status = I2C2_Soft_Probe(address);
-            if (status == I2C2_SOFT_OK) state = STORE_VERIFY;
-            else if (status != I2C2_SOFT_NACK) { Fail(); return 1U; }
+            if (status == I2C2_SOFT_OK)
+                state = STORE_VERIFY;
+            else if (status != I2C2_SOFT_NACK)
+            {
+                Fail();
+                return 1U;
+            }
             break;
-        case STORE_VERIFY: return VerifyWrite();
-        default: break;
+        case STORE_VERIFY:
+            return VerifyWrite();
+        default:
+            break;
     }
     return 0U;
 }
 
-uint8_t MemoryStore_Ready(void) { return loaded; }
+
+uint8_t MemoryStore_Ready(void)
+{
+    return loaded;
+}
+
+
 uint8_t MemoryStore_Busy(void)
 {
     return (uint8_t)(state == STORE_WRITE || state == STORE_WAIT_WRITE || state == STORE_VERIFY);
 }
 
+
 uint8_t MemoryStore_Get(uint8_t channel, radio_preset_t *preset)
 {
-    if (loaded == 0U || channel >= MEMORY_CHANNEL_COUNT || used[channel] == 0U) return 0U;
-    if (preset != 0) *preset = presets[channel];
+    if (loaded == 0U || channel >= MEMORY_CHANNEL_COUNT || used[channel] == 0U)
+        return 0U;
+    if (preset != 0)
+        *preset = presets[channel];
     return 1U;
 }
 
+
 uint8_t MemoryStore_Request(uint8_t channel, const radio_preset_t *preset)
 {
-    if (UARTStore_Busy() != 0U) { Message("MEM BUSY"); return 0U; }
+    if (UARTStore_Busy() != 0U)
+    {
+        Message("MEM BUSY");
+        return 0U;
+    }
     if (loaded == 0U || state != STORE_IDLE || channel >= MEMORY_CHANNEL_COUNT)
-    { Message((state == STORE_ERROR) ? "MEM ERR" : ((loaded == 0U) ? "MEM WAIT" : "MEM BUSY")); return 0U; }
+    {
+        Message((state == STORE_ERROR) ? "MEM ERR" : ((loaded == 0U) ? "MEM WAIT" : "MEM BUSY"));
+        return 0U;
+    }
     write_channel = channel;
     write_slot = (uint8_t)(slots[channel] ^ 1U);
     MemoryRecord_Encode(pending, channel, generations[channel] + 1U, preset);
@@ -183,18 +261,25 @@ uint8_t MemoryStore_Request(uint8_t channel, const radio_preset_t *preset)
     return 1U;
 }
 
+
 uint8_t MemoryStore_TakeSavedChannel(uint8_t *channel)
 {
-    if (saved_event == 0U) return 0U;
-    if (channel != 0) *channel = saved_channel;
+    if (saved_event == 0U)
+        return 0U;
+    if (channel != 0)
+        *channel = saved_channel;
     saved_event = 0U;
     return 1U;
 }
 
+
 const char *MemoryStore_Status(void)
 {
-    if (message[0] != '\0') return message;
-    if (state == STORE_ERROR) return "MEM ERR";
-    if (loaded == 0U) return "MEM LOAD";
+    if (message[0] != '\0')
+        return message;
+    if (state == STORE_ERROR)
+        return "MEM ERR";
+    if (loaded == 0U)
+        return "MEM LOAD";
     return "";
 }

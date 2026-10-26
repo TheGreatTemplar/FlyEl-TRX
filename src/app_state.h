@@ -17,15 +17,15 @@ typedef struct
 
 typedef struct
 {
-	uint32_t rf_hz;
+    uint32_t rf_hz;
     uint32_t adc_update_tick;
 
     uint16_t adc0_mv;
     uint16_t adc1_mv;
 
-	char freq_input[FREQ_INPUT_MAX_LEN + 1U];
+    char freq_input[FREQ_INPUT_MAX_LEN + 1U];
 
-	uint8_t band_index;
+    uint8_t band_index;
     uint8_t step_index;
     uint8_t if_index;
     uint8_t menu_active;

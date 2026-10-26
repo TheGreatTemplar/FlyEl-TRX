@@ -1,24 +1,33 @@
 #include "uart1.h"
 
-#define UART1_PCLK_HZ               72000000UL
+#define UART1_PCLK_HZ 72000000UL
 static uart_config_t uart_active_config = {115200U, 8U, UART_PARITY_NONE, UART_STOP_ONE, 0U};
 
-const uart_config_t *UART1_GetConfig(void) { return &uart_active_config; }
+const uart_config_t *UART1_GetConfig(void)
+{
+    return &uart_active_config;
+}
+
 
 uint8_t UART1_ApplyConfig(const uart_config_t *config)
 {
     static const uint8_t stop_codes[] = {0U, 2U, 1U, 3U};
     uint32_t cr1 = USART_CR1_TE | USART_CR1_RE | USART_CR1_UE;
     uint32_t timeout = 1000000U;
-    if (UARTConfig_Valid(config) == 0U) return 0U;
+    if (UARTConfig_Valid(config) == 0U)
+        return 0U;
     /* M включает parity в длину слова: 8 данных с parity требуют M=1. RM0008 27.3.7. */
-    if (config->data_bits == 9U || config->parity != UART_PARITY_NONE) cr1 |= USART_CR1_M;
-    if (config->parity != UART_PARITY_NONE) cr1 |= USART_CR1_PCE;
-    if (config->parity == UART_PARITY_ODD) cr1 |= USART_CR1_PS;
+    if (config->data_bits == 9U || config->parity != UART_PARITY_NONE)
+        cr1 |= USART_CR1_M;
+    if (config->parity != UART_PARITY_NONE)
+        cr1 |= USART_CR1_PCE;
+    if (config->parity == UART_PARITY_ODD)
+        cr1 |= USART_CR1_PS;
     if ((USART1->CR1 & USART_CR1_UE) != 0U)
     {
         while ((USART1->SR & USART_SR_TC) == 0U)
-            if (--timeout == 0U) return 0U;
+            if (--timeout == 0U)
+                return 0U;
     }
     USART1->CR1 = 0U;
     USART1->CR2 = (uint16_t)((uint32_t)stop_codes[config->stop] << 12U);
@@ -28,6 +37,7 @@ uint8_t UART1_ApplyConfig(const uart_config_t *config)
     uart_active_config = *config;
     return 1U;
 }
+
 
 static void GPIO_ConfigAFPushPull(GPIO_TypeDef *gpio, uint8_t pin)
 {
@@ -50,8 +60,9 @@ static void GPIO_ConfigAFPushPull(GPIO_TypeDef *gpio, uint8_t pin)
      * CNF  = 10: alternate function push-pull.
      */
     *reg &= ~(0xFUL << shift);
-    *reg |=  (0xBUL << shift);
+    *reg |= (0xBUL << shift);
 }
+
 
 static void GPIO_ConfigInputFloating(GPIO_TypeDef *gpio, uint8_t pin)
 {
@@ -74,16 +85,15 @@ static void GPIO_ConfigInputFloating(GPIO_TypeDef *gpio, uint8_t pin)
      * CNF  = 01: floating input.
      */
     *reg &= ~(0xFUL << shift);
-    *reg |=  (0x4UL << shift);
+    *reg |= (0x4UL << shift);
 }
+
 
 /* Настраивает PA9/PA10 и скорость UART1; частота APB2 — 72 МГц. */
 void UART1_Init(uint32_t baudrate)
 {
     uart_config_t config = {baudrate, 8U, UART_PARITY_NONE, UART_STOP_ONE, 0U};
-    RCC->APB2ENR |= RCC_APB2ENR_IOPAEN |
-                    RCC_APB2ENR_AFIOEN |
-                    RCC_APB2ENR_USART1EN;
+    RCC->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_AFIOEN | RCC_APB2ENR_USART1EN;
 
     /*
      * PA9  = USART1_TX
@@ -96,15 +106,18 @@ void UART1_Init(uint32_t baudrate)
     USART1->CR2 = 0U;
     USART1->CR3 = 0U;
 
-    if (UARTConfig_Valid(&config) == 0U) config.baud = 115200U;
+    if (UARTConfig_Valid(&config) == 0U)
+        config.baud = 115200U;
     (void)UART1_ApplyConfig(&config);
 }
+
 
 /* Передаёт символ, ожидая свободного регистра передатчика. */
 void UART1_SendChar(char ch)
 {
     UART1_SendWord((uint16_t)(uint8_t)ch);
 }
+
 
 void UART1_SendWord(uint16_t word)
 {
@@ -115,6 +128,7 @@ void UART1_SendWord(uint16_t word)
     USART1->DR = word & ((uart_active_config.data_bits == 9U) ? 0x01FFU : 0x00FFU);
 }
 
+
 /* Передаёт строку с нулевым завершением без добавления перевода строки. */
 void UART1_SendString(const char *text)
 {
@@ -124,6 +138,7 @@ void UART1_SendString(const char *text)
         text++;
     }
 }
+
 
 /* Передаёт беззнаковое число десятичными цифрами без printf. */
 void UART1_SendU32(uint32_t value)

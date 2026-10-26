@@ -4,9 +4,7 @@
 #include "../font/font_terminus_10x19_digi.h"
 #include "../font/font_sw2019_refined_digi.h"
 
-static uint8_t LCD_FindSymbol10x15(uint8_t symbol,
-                                   uint16_t *symbol_offset,
-                                   uint8_t *symbol_width)
+static uint8_t LCD_FindSymbol10x15(uint8_t symbol, uint16_t *symbol_offset, uint8_t *symbol_width)
 {
     uint8_t i;
 
@@ -22,6 +20,7 @@ static uint8_t LCD_FindSymbol10x15(uint8_t symbol,
 
     return 0U;
 }
+
 
 static uint8_t LCD_GetSymbol10x15Width(uint8_t symbol)
 {
@@ -40,6 +39,7 @@ static uint8_t LCD_GetSymbol10x15Width(uint8_t symbol)
 
     return symbol_width;
 }
+
 
 void LCD_DrawDigit10x15(uint8_t x_pos, uint8_t y_pos, uint8_t symbol, uint8_t invert)
 {
@@ -112,6 +112,7 @@ void LCD_DrawDigit10x15(uint8_t x_pos, uint8_t y_pos, uint8_t symbol, uint8_t in
     }
 }
 
+
 void LCD_PrintDigits10x15(uint8_t x_pos, uint8_t y_pos, const char *text, uint8_t spacing, uint8_t invert)
 {
     uint8_t symbol;
@@ -141,9 +142,8 @@ void LCD_PrintDigits10x15(uint8_t x_pos, uint8_t y_pos, const char *text, uint8_
     }
 }
 
-static uint8_t LCD_FindSymbol10x19(uint8_t symbol,
-                                   uint16_t *symbol_offset,
-                                   uint8_t *symbol_width)
+
+static uint8_t LCD_FindSymbol10x19(uint8_t symbol, uint16_t *symbol_offset, uint8_t *symbol_width)
 {
     uint8_t i;
 
@@ -159,6 +159,7 @@ static uint8_t LCD_FindSymbol10x19(uint8_t symbol,
 
     return 0U;
 }
+
 
 static uint8_t LCD_GetSymbol10x19Width(uint8_t symbol)
 {
@@ -177,6 +178,7 @@ static uint8_t LCD_GetSymbol10x19Width(uint8_t symbol)
 
     return symbol_width;
 }
+
 
 void LCD_DrawDigit10x19(uint8_t x_pos, uint8_t y_pos, uint8_t symbol, uint8_t invert)
 {
@@ -240,6 +242,7 @@ void LCD_DrawDigit10x19(uint8_t x_pos, uint8_t y_pos, uint8_t symbol, uint8_t in
     }
 }
 
+
 void LCD_PrintDigits10x19(uint8_t x_pos, uint8_t y_pos, const char *text, uint8_t spacing, uint8_t invert)
 {
     uint8_t symbol;
@@ -268,6 +271,7 @@ void LCD_PrintDigits10x19(uint8_t x_pos, uint8_t y_pos, const char *text, uint8_
         text++;
     }
 }
+
 
 uint8_t LCD_GetDigits10x19Width(const char *text, uint8_t spacing)
 {
@@ -301,6 +305,7 @@ uint8_t LCD_GetDigits10x19Width(const char *text, uint8_t spacing)
     return (uint8_t)width;
 }
 
+
 uint8_t LCD_GetDigits10x15Width(const char *text, uint8_t spacing)
 {
     uint16_t width;
@@ -333,6 +338,7 @@ uint8_t LCD_GetDigits10x15Width(const char *text, uint8_t spacing)
     return (uint8_t)width;
 }
 
+
 /* Выбирает готовый растр 17 или 15 пикселей; масштабирования на лету нет. */
 void LCD_DrawDigitSW2019(uint8_t x, uint8_t y, uint8_t symbol, uint8_t height, uint8_t invert)
 {
@@ -362,8 +368,7 @@ void LCD_DrawDigitSW2019(uint8_t x, uint8_t y, uint8_t symbol, uint8_t height, u
             uint8_t on = (col < 8U) ? (uint8_t)((glyph[row] >> (7U - col)) & 1U) : 0U;
             if ((uint16_t)x + col < LCD_WIDTH && (uint16_t)y + row < LCD_HEIGHT)
             {
-                LCD_DrawPixel((uint8_t)(x + col), (uint8_t)(y + row),
-                              (uint8_t)(on ^ ((invert & CH_INVERT) != 0U)));
+                LCD_DrawPixel((uint8_t)(x + col), (uint8_t)(y + row), (uint8_t)(on ^ ((invert & CH_INVERT) != 0U)));
             }
         }
     }
