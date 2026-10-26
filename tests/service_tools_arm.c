@@ -44,6 +44,38 @@ int test_factory_menu_confirmation_cancel_tx_and_restart(void)
 }
 
 
+int test_contrast_live_preview_limits_cancel_and_verified_save(void)
+{
+    uint32_t before;
+    InitControls();
+    before = mock_uart_saves;
+    OpenServiceItem(13U, 1U);
+    CHECK(Service_Stage() == SERVICE_CONTRAST && LCD_GetContrast() == 15U);
+    Service_Encoder(5);
+    CHECK(LCD_GetContrast() == 20U && mock_uart_saves == before);
+    Service_HandleKey(Key_5_1);
+    CHECK(Service_Stage() == SERVICE_SECTION && LCD_GetContrast() == 15U);
+    Service_HandleKey(Key_9_2);
+    Service_Encoder(2147483647);
+    CHECK(LCD_GetContrast() == 63U);
+    Service_Encoder(-2147483647 - 1);
+    CHECK(LCD_GetContrast() == 0U);
+    Service_HandleKey(Key_9_3);
+    CHECK(LCD_GetContrast() == 15U);
+    Service_HandleKey(Key_5_3);
+    Service_Encoder(22);
+    Service_HandleKey(Key_5_3);
+    CHECK(mock_uart_saves == before + 1U && Service_Stage() == SERVICE_CONTRAST);
+    CHECK(ServiceContrast_Task() == 1U);
+    CHECK(strcmp(ServiceContrast_Status(), "SAVED EEPROM") == 0);
+    Service_Encoder(1);
+    CHECK(LCD_GetContrast() == 38U);
+    Service_HandleKey(Key_5_1);
+    CHECK(LCD_GetContrast() == 37U && Service_Stage() == SERVICE_SECTION);
+    return 0;
+}
+
+
 int test_service_uart_editor_cancel_validation_and_apply(void)
 {
     char value[16];

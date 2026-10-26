@@ -1,4 +1,5 @@
 /* Снимки настоящего framebuffer для проверки геометрии экрана после ARM-исполнения. */
+#define CONTROL_REAL_LCD
 #include "controls_arm.c"
 #include "gmg12864.c"
 #include "lcd_text.c"
@@ -12,6 +13,7 @@ void LCD_TestUpdate(void);
 #define LCD_Update LCD_TestUpdate
 #include "ui_service_tools.c"
 #include "ui_service_factory.c"
+#include "ui_service_contrast.c"
 #include "ui_service.c"
 #include "ui_settings.c"
 #include "ui_status.c"
@@ -19,7 +21,7 @@ void LCD_TestUpdate(void);
 #include "ui_boot.c"
 #undef LCD_Update
 
-uint8_t display_snapshots[21][1024];
+uint8_t display_snapshots[22][1024];
 uint32_t display_count;
 static const char *test_eeprom_message;
 
@@ -44,7 +46,7 @@ const char *EEPROM_TestStatus(void)
 
 void LCD_TestUpdate(void)
 {
-    if (display_count < 21U)
+    if (display_count < 22U)
         memcpy(display_snapshots[display_count++], lcd_buffer, 1024U);
 }
 
@@ -154,6 +156,10 @@ int test_display_snapshots(void)
     ServiceFactory_Encoder(1);
     ServiceTools_DrawFactory();
     CHECK(display_count == 21U);
+    lcd_contrast = LCD_CONTRAST_DEFAULT;
+    ServiceContrast_Open();
+    ServiceTools_DrawContrast();
+    CHECK(display_count == 22U);
     return 0;
 }
 

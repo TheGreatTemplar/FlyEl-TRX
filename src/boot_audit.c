@@ -3,6 +3,7 @@
 #include "memory_record.h"
 #include "app_config.h"
 #include "uart_config.h"
+#include "gmg12864.h"
 #include "at24c256.h"
 #include "text_utils.h"
 #include <string.h>
@@ -53,7 +54,7 @@ static uint8_t Inspect(const uint8_t *data, uint8_t channel, uint8_t uart, uint3
             return AUDIT_FORMAT;
         return (*used != 0U) ? AUDIT_USED : AUDIT_FREE;
     }
-    if (memcmp(data, "FU01", 4U) != 0)
+    if (memcmp(data, "FU01", 4U) != 0 || (data[15] != 0xFFU && data[15] > LCD_CONTRAST_MAX))
         return AUDIT_FORMAT;
     config.baud =
         (uint32_t)data[8] | ((uint32_t)data[9] << 8U) | ((uint32_t)data[10] << 16U) | ((uint32_t)data[11] << 24U);

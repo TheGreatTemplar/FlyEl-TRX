@@ -12,6 +12,36 @@ static uint32_t mock_uart_saves;
 static uint8_t mock_factory_state;
 static uint32_t mock_factory_starts;
 static uint32_t mock_reboots;
+#ifndef CONTROL_REAL_LCD
+static uint8_t mock_lcd_contrast = LCD_CONTRAST_DEFAULT;
+uint8_t LCD_GetContrast(void)
+{
+    return mock_lcd_contrast;
+}
+
+
+void LCD_SetContrast(uint8_t value)
+{
+    mock_lcd_contrast = value;
+}
+
+
+#endif
+
+uint8_t UARTStore_Busy(void)
+{
+    return 0U;
+}
+
+
+uint8_t UARTStore_RequestContrast(uint8_t value)
+{
+    if (value > LCD_CONTRAST_MAX)
+        return 0U;
+    mock_uart_saves++;
+    return 1U;
+}
+
 
 uint8_t EEPROMFactory_State(void)
 {

@@ -3,6 +3,7 @@
 #include "app_state.h"
 #include "radio_panel.h"
 #include "text_utils.h"
+#include "gmg12864.h"
 
 void ServiceValues_Read(uint16_t id, char *value, char *detail)
 {
@@ -37,6 +38,10 @@ void ServiceValues_Read(uint16_t id, char *value, char *detail)
         case 1401U:
             Text_Append(value, "GMG12864");
             Text_Append(detail, "128X64");
+            break;
+        case 1402U:
+            Text_U32ToDec(value, LCD_GetContrast(), 1U);
+            Text_Append(detail, "0..63 ENCODER");
             break;
         case 1501U:
             Text_Append(value, "PB6 PB7   PB8 PB9");

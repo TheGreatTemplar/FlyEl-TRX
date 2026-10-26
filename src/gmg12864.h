@@ -30,6 +30,12 @@
 
 #define CH_UNINVERT 0U
 #define CH_INVERT 1U
+#define LCD_CONTRAST_DEFAULT 15U
+#define LCD_CONTRAST_MAX 63U
+
+/* Электронный контраст 0..63; только основной цикл, без сброса кадра. */
+void LCD_SetContrast(uint8_t value);
+uint8_t LCD_GetContrast(void);
 
 void LCD_GPIO_Init(void);
 void LCD_Init(void);

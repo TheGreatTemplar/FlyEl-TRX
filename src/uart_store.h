@@ -8,5 +8,8 @@ uint8_t UARTStore_Busy(void);
 uint8_t UARTStore_Ready(void);
 /* Применить и асинхронно сохранить; при ошибке записи вернуть прежний UART. */
 uint8_t UARTStore_Request(const uart_config_t *config);
+/* Общая атомарная запись UART+LCD: byte 15 — контраст; FF старой версии означает 15.
+ * Сохранение контраста не перенастраивает UART. */
+uint8_t UARTStore_RequestContrast(uint8_t contrast);
 const char *UARTStore_Status(void);
 #endif

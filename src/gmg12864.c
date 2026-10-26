@@ -15,6 +15,7 @@
  */
 
 static uint8_t lcd_buffer[LCD_WIDTH * LCD_HEIGHT / 8U];
+static uint8_t lcd_contrast = LCD_CONTRAST_DEFAULT;
 
 static void LCD_DelayMs(uint32_t ms)
 {
@@ -100,6 +101,25 @@ static void LCD_SendData(uint8_t data)
 {
     LCD_DC_Data();
     (void)SPI1_SendByte(data);
+}
+
+
+/* Та же команда 81h, что при инициализации; диапазон регистра — шесть бит. */
+void LCD_SetContrast(uint8_t value)
+{
+    if (value > LCD_CONTRAST_MAX)
+        value = LCD_CONTRAST_MAX;
+    LCD_CS_Active();
+    LCD_SendCommand(0x81U);
+    LCD_SendCommand(value);
+    LCD_CS_Idle();
+    lcd_contrast = value;
+}
+
+
+uint8_t LCD_GetContrast(void)
+{
+    return lcd_contrast;
 }
 
 
@@ -211,7 +231,8 @@ void LCD_Init(void)
 
     /* Электронная регулировка контраста. */
     LCD_SendCommand(0x81U);
-    LCD_SendCommand(15U);
+    lcd_contrast = LCD_CONTRAST_DEFAULT;
+    LCD_SendCommand(lcd_contrast);
     LCD_DelayMs(1U);
 
     /* Start line = 0. */

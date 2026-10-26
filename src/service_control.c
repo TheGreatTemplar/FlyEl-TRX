@@ -6,6 +6,7 @@
 #include "service_uart.h"
 #include "service_keytest.h"
 #include "service_factory.h"
+#include "service_contrast.h"
 
 static uint8_t service_active;
 static uint8_t service_stage;
@@ -91,6 +92,11 @@ static uint8_t ServiceMove(uint8_t current, uint8_t count, int32_t steps)
 
 void Service_Encoder(int32_t steps)
 {
+    if (service_active != 0U && service_stage == SERVICE_CONTRAST)
+    {
+        ServiceContrast_Encoder(steps);
+        return;
+    }
     if (service_active != 0U && service_stage == SERVICE_FACTORY)
     {
         ServiceFactory_Encoder(steps);
@@ -122,6 +128,13 @@ void Service_HandleKey(input_key_t key)
 {
     if (service_active == 0U)
         return;
+    if (service_stage == SERVICE_CONTRAST)
+    {
+        if (ServiceContrast_Key(key) != 0U)
+            service_stage = SERVICE_SECTION;
+        menu.need_redraw = 1U;
+        return;
+    }
     if (service_stage == SERVICE_FACTORY)
     {
         if (ServiceFactory_Key(key) != 0U)
@@ -145,7 +158,12 @@ void Service_HandleKey(input_key_t key)
         else if (service_stage == SERVICE_SECTION)
         {
             uint16_t id = Service_Current()->id;
-            if (id == 1703U)
+            if (id == 1402U)
+            {
+                ServiceContrast_Open();
+                service_stage = SERVICE_CONTRAST;
+            }
+            else if (id == 1703U)
             {
                 ServiceFactory_Open();
                 service_stage = SERVICE_FACTORY;

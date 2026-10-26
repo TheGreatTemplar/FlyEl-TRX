@@ -19,6 +19,7 @@
 #include "service_uart.c"
 #include "service_keytest.c"
 #include "service_factory.c"
+#include "service_contrast.c"
 #include "service_control.c"
 #include "settings_control.c"
 #include "keyboard.c"
@@ -38,6 +39,9 @@ static void InitControls(void)
     mock_factory_state = EEPROM_FACTORY_IDLE;
     mock_factory_starts = 0U;
     mock_reboots = 0U;
+#ifndef CONTROL_REAL_LCD
+    mock_lcd_contrast = LCD_CONTRAST_DEFAULT;
+#endif
     now_tick = 0U;
     menu.rf_hz = 28200000U;
     menu.band_index = 8U;

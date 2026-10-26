@@ -1,4 +1,4 @@
-/* Независимая от каналов запись UART; операции согласованы с memory_store.c. */
+/* Независимая от каналов запись UART/LCD; операции согласованы с memory_store.c. */
 #include "uart_store.h"
 #include "uart1.h"
 #include "at24c256.h"
@@ -7,6 +7,7 @@
 #include "eeprom_startup.h"
 #include "app_time.h"
 #include "eeprom_factory.h"
+#include "gmg12864.h"
 #include <string.h>
 
 enum
@@ -32,6 +33,8 @@ static uint32_t uart_wait_tick;
 static uint32_t uart_poll_tick;
 static uart_config_t uart_previous;
 static const char *uart_store_message;
+static uint8_t uart_saved_contrast;
+static uint8_t uart_apply_pending;
 
 static void UartPut32(uint8_t *data, uint32_t value)
 {
@@ -51,7 +54,7 @@ static uint8_t UartDecode(const uint8_t *data, uart_config_t *config, uint32_t *
 {
     uint16_t crc = AT24C256_Crc16Update(0xFFFFU, data, 62U);
     if (data[0] != 'F' || data[1] != 'U' || data[2] != '0' || data[3] != '1' || data[62] != (uint8_t)crc ||
-        data[63] != (uint8_t)(crc >> 8U))
+        data[63] != (uint8_t)(crc >> 8U) || (data[15] != 0xFFU && data[15] > LCD_CONTRAST_MAX))
         return 0U;
     config->baud = UartGet32(&data[8]);
     config->data_bits = data[12];
@@ -65,6 +68,9 @@ static uint8_t UartDecode(const uint8_t *data, uart_config_t *config, uint32_t *
 
 void UARTStore_Init(void)
 {
+    uart_saved_contrast = LCD_CONTRAST_DEFAULT;
+    LCD_SetContrast(LCD_CONTRAST_DEFAULT);
+    uart_apply_pending = 0U;
     uart_store_state = UART_WAIT_CRC;
     uart_generation = 0U;
     uart_store_valid = 0U;
@@ -96,7 +102,11 @@ const char *UARTStore_Status(void)
 static uint8_t UartStoreFail(const char *reason)
 {
     if (UARTStore_Busy() != 0U)
-        (void)UART1_ApplyConfig(&uart_previous);
+    {
+        if (uart_apply_pending != 0U)
+            (void)UART1_ApplyConfig(&uart_previous);
+        LCD_SetContrast(uart_saved_contrast);
+    }
     uart_store_state = (uart_store_ready != 0U) ? UART_IDLE : UART_ERROR;
     uart_store_message = reason;
     return 1U;
@@ -135,6 +145,8 @@ uint8_t UARTStore_Task(void)
             {
                 if (UART1_ApplyConfig(&config) == 0U)
                     return UartStoreFail("UART RESTORE FAIL");
+                uart_saved_contrast = (data[15] == 0xFFU) ? LCD_CONTRAST_DEFAULT : data[15];
+                LCD_SetContrast(uart_saved_contrast);
                 uart_generation = generation;
                 uart_store_slot = slot;
                 uart_store_valid = 1U;
@@ -182,6 +194,7 @@ uint8_t UARTStore_Task(void)
             if (UartDecode(data, &config, &generation) == 0U)
                 return UartStoreFail("EEPROM CRC FAIL");
             uart_generation = generation;
+            uart_saved_contrast = data[15];
             uart_store_slot ^= 1U;
             uart_store_valid = 1U;
             uart_store_state = UART_IDLE;
@@ -194,7 +207,7 @@ uint8_t UARTStore_Task(void)
 }
 
 
-uint8_t UARTStore_Request(const uart_config_t *config)
+static uint8_t RequestSettings(const uart_config_t *config, uint8_t contrast, uint8_t apply_uart)
 {
     if (EEPROMFactory_Locked() != 0U)
     {
@@ -202,7 +215,7 @@ uint8_t UARTStore_Request(const uart_config_t *config)
         return 0U;
     }
     uint16_t crc;
-    if (UARTConfig_Valid(config) == 0U)
+    if (UARTConfig_Valid(config) == 0U || contrast > LCD_CONTRAST_MAX)
     {
         uart_store_message = "INVALID UART";
         return 0U;
@@ -219,11 +232,12 @@ uint8_t UARTStore_Request(const uart_config_t *config)
         return 0U;
     }
     uart_previous = *UART1_GetConfig();
-    if (UART1_ApplyConfig(config) == 0U)
+    if (apply_uart != 0U && UART1_ApplyConfig(config) == 0U)
     {
         uart_store_message = "UART BUSY";
         return 0U;
     }
+    uart_apply_pending = apply_uart;
     memset(uart_pending, 0xFF, sizeof(uart_pending));
     uart_pending[0] = 'F';
     uart_pending[1] = 'U';
@@ -234,10 +248,26 @@ uint8_t UARTStore_Request(const uart_config_t *config)
     uart_pending[12] = config->data_bits;
     uart_pending[13] = config->parity;
     uart_pending[14] = config->stop;
+    uart_pending[15] = contrast;
     crc = AT24C256_Crc16Update(0xFFFFU, uart_pending, 62U);
     uart_pending[62] = (uint8_t)crc;
     uart_pending[63] = (uint8_t)(crc >> 8U);
     uart_store_state = UART_WRITE;
     uart_store_message = "SAVING EEPROM";
     return 1U;
+}
+
+
+uint8_t UARTStore_Request(const uart_config_t *config)
+{
+    return RequestSettings(config, LCD_GetContrast(), 1U);
+}
+
+
+uint8_t UARTStore_RequestContrast(uint8_t contrast)
+{
+    uint8_t accepted = RequestSettings(UART1_GetConfig(), contrast, 0U);
+    if (accepted != 0U)
+        LCD_SetContrast(contrast);
+    return accepted;
 }

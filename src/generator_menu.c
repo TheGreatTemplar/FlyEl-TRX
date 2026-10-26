@@ -19,6 +19,7 @@
 #include "service_control.h"
 #include "uart_store.h"
 #include "eeprom_factory.h"
+#include "service_contrast.h"
 
 generator_menu_t menu;
 
@@ -127,6 +128,8 @@ void GeneratorMenu_Task(void)
     if (EEPROM_TestTask() != 0U)
         menu.need_redraw = 1U;
     if (UARTStore_Task() != 0U)
+        menu.need_redraw = 1U;
+    if (ServiceContrast_Task() != 0U)
         menu.need_redraw = 1U;
     MemoryControl_Task();
     UpdateAdc();

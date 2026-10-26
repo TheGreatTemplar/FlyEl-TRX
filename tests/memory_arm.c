@@ -26,6 +26,20 @@ static uint32_t transfer_ticks;
 static uint32_t write_cycle_ticks;
 static uint8_t write_bus_error;
 static uart_config_t uart_actual;
+static uint8_t memory_lcd_contrast = LCD_CONTRAST_DEFAULT;
+static uint32_t uart_apply_calls;
+uint8_t LCD_GetContrast(void)
+{
+    return memory_lcd_contrast;
+}
+
+
+void LCD_SetContrast(uint8_t value)
+{
+    memory_lcd_contrast = value;
+}
+
+
 const uart_config_t *UART1_GetConfig(void)
 {
     return &uart_actual;
@@ -34,6 +48,7 @@ const uart_config_t *UART1_GetConfig(void)
 
 uint8_t UART1_ApplyConfig(const uart_config_t *config)
 {
+    uart_apply_calls++;
     if (UARTConfig_Valid(config) == 0U)
         return 0U;
     uart_actual = *config;
@@ -100,6 +115,8 @@ static void Run(uint32_t count)
 
 static void InitChip(void)
 {
+    memory_lcd_contrast = LCD_CONTRAST_DEFAULT;
+    uart_apply_calls = 0U;
     factory_state = EEPROM_FACTORY_IDLE;
     memset(chip, 0xFF, sizeof(chip));
     test_tick = 0U;
@@ -301,6 +318,76 @@ static void RunBoth(uint32_t count)
         (void)MemoryStore_Task();
         test_tick += 2U;
     }
+}
+
+
+int test_contrast_save_reload_keeps_uart_and_channel_data(void)
+{
+    uint32_t applies;
+    uart_config_t config = {9600U, 8U, UART_PARITY_EVEN, UART_STOP_TWO, 0U};
+    radio_preset_t preset = {7100000U, RADIO_LSB, 0U, 0U, 2U};
+    InitChip();
+    RunBoth(5U);
+    CHECK(UARTStore_Request(&config) != 0U);
+    RunBoth(12U);
+    CHECK(MemoryStore_Request(0U, &preset) != 0U);
+    RunBoth(12U);
+    applies = uart_apply_calls;
+    CHECK(UARTStore_RequestContrast(37U) != 0U && LCD_GetContrast() == 37U);
+    CHECK(MemoryStore_Request(1U, &preset) == 0U);
+    RunBoth(12U);
+    CHECK(uart_apply_calls == applies && uart_actual.baud == 9600U && uart_actual.parity == UART_PARITY_EVEN);
+    CHECK(UARTStore_RequestContrast(64U) == 0U);
+    UARTStore_Init();
+    CHECK(LCD_GetContrast() == 15U);
+    RunBoth(5U);
+    CHECK(LCD_GetContrast() == 37U && uart_actual.baud == 9600U);
+    config.baud = 38400U;
+    CHECK(UARTStore_Request(&config) != 0U);
+    RunBoth(12U);
+    UARTStore_Init();
+    RunBoth(5U);
+    CHECK(LCD_GetContrast() == 37U && uart_actual.baud == 38400U);
+    CHECK(MemoryStore_Get(0U, &preset) != 0U && preset.hz == 7100000U);
+    return 0;
+}
+
+
+int test_contrast_old_record_fallback_and_write_failure_roll_back(void)
+{
+    uint16_t offset;
+    uint16_t crc;
+    uint32_t applies;
+    uart_config_t config = {19200U, 8U, UART_PARITY_NONE, UART_STOP_ONE, 0U};
+    InitChip();
+    RunBoth(5U);
+    CHECK(UARTStore_Request(&config) != 0U);
+    RunBoth(12U);
+    offset = (uint16_t)((uint16_t)uart_store_slot * 64U);
+    chip[offset + 15U] = 0xFFU;
+    crc = AT24C256_Crc16Update(0xFFFFU, &chip[offset], 62U);
+    chip[offset + 62U] = (uint8_t)crc;
+    chip[offset + 63U] = (uint8_t)(crc >> 8U);
+    UARTStore_Init();
+    RunBoth(5U);
+    CHECK(LCD_GetContrast() == 15U && uart_actual.baud == 19200U);
+    CHECK(UARTStore_RequestContrast(24U) != 0U);
+    RunBoth(12U);
+    offset = (uint16_t)((uint16_t)uart_store_slot * 64U);
+    chip[offset + 15U] = 0xFEU;
+    crc = AT24C256_Crc16Update(0xFFFFU, &chip[offset], 62U);
+    chip[offset + 62U] = (uint8_t)crc;
+    chip[offset + 63U] = (uint8_t)(crc >> 8U);
+    UARTStore_Init();
+    RunBoth(5U);
+    CHECK(LCD_GetContrast() == 15U && uart_actual.baud == 19200U);
+    applies = uart_apply_calls;
+    write_protected = 1U;
+    CHECK(UARTStore_RequestContrast(41U) != 0U && LCD_GetContrast() == 41U);
+    RunBoth(12U);
+    CHECK(strcmp(UARTStore_Status(), "EEPROM VERIFY FAIL") == 0);
+    CHECK(LCD_GetContrast() == 15U && uart_actual.baud == 19200U && uart_apply_calls == applies);
+    return 0;
 }
 
 

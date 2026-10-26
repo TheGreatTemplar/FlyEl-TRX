@@ -181,6 +181,13 @@ int test_service_catalog_and_navigation_visit_all_192_items_without_rf_changes(v
             CHECK(current->id == ((uint16_t)section + 1U) * 100U + item + 1U);
             CHECK(current->label[0] != '\0' && current->type <= SERVICE_BOOL);
             Service_HandleKey(Key_5_3);
+            if (current->id == 1402U)
+            {
+                CHECK(Service_Stage() == SERVICE_CONTRAST);
+                Service_HandleKey(Key_5_1);
+                visited++;
+                continue;
+            }
             if (current->id == 1703U)
             {
                 CHECK(Service_Stage() == SERVICE_FACTORY && ServiceFactory_Confirmed() == 0U);

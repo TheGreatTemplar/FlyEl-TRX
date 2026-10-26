@@ -26,6 +26,11 @@ void ServiceUI_Draw(void)
                                             : ((stage == SERVICE_BAND) ? 9U : service_sections[section].count);
     uint8_t first = (uint8_t)((selected / 4U) * 4U);
     char text[24], part[8];
+    if (stage == SERVICE_CONTRAST)
+    {
+        ServiceTools_DrawContrast();
+        return;
+    }
     if (stage == SERVICE_FACTORY)
     {
         ServiceTools_DrawFactory();
