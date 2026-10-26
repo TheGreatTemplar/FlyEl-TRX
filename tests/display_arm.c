@@ -138,16 +138,15 @@ int test_display_snapshots(void)
     BootUI_Line(0U, "FLYEL BOOT", 0U);
     BootUI_Line(1U, "SI5351 I2C OK", 0U);
     BootUI_Line(2U, "EEPROM 57%", 0U);
-    BootUI_Spinner(2U, 1U);
     BootUI_Update();
     BootUI_Clear();
-    BootUI_Line(0U, "BOOT LOG 1/300", 0U);
-    BootUI_Line(1U, "READ FAIL @4080", 1U);
-    BootUI_Line(2U, "CH 02 B: CRC ERROR", 1U);
-    BootUI_Line(3U, "CH 07 A: FORMAT ERR", 1U);
-    BootUI_Line(4U, "CH 12 NO VALID COPY", 1U);
-    BootUI_Line(5U, "UART A: CRC ERROR", 1U);
-    BootUI_Line(6U, "ENC:LOG F-INP:GO", 0U);
+    BootUI_Line(0U, "ERRORS 300", 1U);
+    BootUI_Line(1U, "READ FAIL @4080", 0U);
+    BootUI_Line(2U, "CH 02 B: CRC ERROR", 0U);
+    BootUI_Line(3U, "CH 07 A: FORMAT ERR", 0U);
+    BootUI_Line(4U, "CH 12 NO VALID COPY", 0U);
+    BootUI_Line(5U, "UART A: CRC ERROR", 0U);
+    BootUI_Line(6U, "1/300 ENC F-INP:GO", 0U);
     BootUI_Update();
     CHECK(display_count == 19U);
     ServiceFactory_Open();
@@ -164,7 +163,7 @@ int test_boot_display_two_blank_pixel_rows_and_text_fit(void)
     uint8_t row;
     uint8_t x;
     const char *labels[] = {"READ FAIL @7F80",      "CH 99 NO VALID COPY", "CH 99 A: FORMAT ERR", "ENC:LOG F-INP:GO",
-                            "EEPROM FAIL 999.99 S", "CHANNELS NOT READ",   "BOOT LOG 356/356"};
+                            "EEPROM FAIL 999.99 S", "CHANNELS NOT READ",   "356/356 ENC F-INP:GO"};
     CHECK(LCD_FindStatusGlyph('%')->symbol == '%');
     CHECK(LCD_FindStatusGlyph('/')->symbol == '/');
     CHECK(LCD_FindStatusGlyph('@')->symbol == '@');
@@ -173,35 +172,27 @@ int test_boot_display_two_blank_pixel_rows_and_text_fit(void)
         CHECK(LCD_GetText5x7Width(labels[row], 1U) <= 128U);
     BootUI_Clear();
     for (row = 0U; row < 7U; row++)
-        BootUI_Line(row, "M TEST 0123", 1U);
-    /* Межсимвольные интервалы входят в ровный инверсный фон. */
-    CHECK((lcd_buffer[5] & 0x7FU) == 0x7FU);
+        BootUI_Line(row, "M TEST 0123", 0U);
     for (row = 0U; row < 6U; row++)
     {
         uint8_t y;
-        for (y = (uint8_t)(row * 9U + 7U); y < row * 9U + 9U; y++)
+        for (y = (uint8_t)(row * 9U + 8U); y < row * 9U + 10U; y++)
             for (x = 0U; x < 128U; x++)
                 CHECK((lcd_buffer[(uint16_t)(y / 8U) * 128U + x] & (uint8_t)(1U << (y % 8U))) == 0U);
     }
-    return 0;
-}
-
-
-int test_boot_spinner_advances_every_frame_even_after_long_transactions(void)
-{
-    uint8_t frames[4][1024];
-    uint8_t i;
-    for (i = 0U; i < 4U; i++)
-    {
-        BootUI_Clear();
-        BootUI_Spinner(2U, i);
-        memcpy(frames[i], lcd_buffer, 1024U);
-    }
-    for (i = 1U; i < 4U; i++)
-        CHECK(memcmp(frames[i - 1U], frames[i], 1024U) != 0);
     BootUI_Clear();
-    BootUI_Spinner(2U, 4U);
-    CHECK(memcmp(frames[0], lcd_buffer, 1024U) == 0);
+    BootUI_Line(0U, "ERRORS 3", 1U);
+    {
+        uint8_t width = LCD_GetText5x7Width("ERRORS 3", 1U);
+        for (x = 0U; x <= width + 1U; x++)
+        {
+            CHECK((lcd_buffer[x] & 1U) != 0U);
+            CHECK((lcd_buffer[128U + x] & 1U) != 0U);
+        }
+        CHECK(lcd_buffer[width + 2U] == 0U);
+        CHECK(lcd_buffer[0] == 0xFFU && (lcd_buffer[128U] & 1U) != 0U);
+        CHECK(lcd_buffer[width + 1U] == 0xFFU && (lcd_buffer[129U + width] & 1U) != 0U);
+    }
     return 0;
 }
 

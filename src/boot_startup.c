@@ -28,7 +28,6 @@ void BootStartup_Begin(void)
     BootUI_Clear();
     BootUI_Line(0U, "FLYEL BOOT", 0U);
     BootUI_Line(1U, "SI5351 INIT", 0U);
-    BootUI_Spinner(1U, 0U);
     BootUI_Update();
 }
 
@@ -39,7 +38,7 @@ static void DrawSummary(uint8_t read_ok, uint32_t elapsed)
     char number[12];
     BootUI_Clear();
     BootUI_Line(0U, "FLYEL BOOT", 0U);
-    BootUI_Line(1U, menu.si5351_ok ? "SI5351 I2C OK" : "SI5351 I2C FAIL", (uint8_t)(menu.si5351_ok == 0U));
+    BootUI_Line(1U, menu.si5351_ok ? "SI5351 I2C OK" : "SI5351 I2C FAIL", 0U);
     strcpy(line, read_ok ? "EEPROM OK " : "EEPROM FAIL ");
     Text_U32ToDec(number, elapsed / 2000U, 1U);
     Text_Append(line, number);
@@ -47,8 +46,8 @@ static void DrawSummary(uint8_t read_ok, uint32_t elapsed)
     Text_U32ToDec(number, (elapsed % 2000U) / 20U, 2U);
     Text_Append(line, number);
     Text_Append(line, " S");
-    BootUI_Line(2U, line, (uint8_t)(read_ok == 0U));
-    BootUI_Line(3U, EEPROM_TestStatus(), (uint8_t)(read_ok == 0U));
+    BootUI_Line(2U, line, 0U);
+    BootUI_Line(3U, EEPROM_TestStatus(), 0U);
     strcpy(line, "USED ");
     Text_U32ToDec(number, BootAudit_Used(), 2U);
     Text_Append(line, number);
@@ -73,6 +72,8 @@ static void ShowJournal(uint8_t read_ok, uint8_t uart_ok, uint8_t channels_ok)
     uint8_t extras = 0U;
     uint16_t top = 0U;
     uint16_t total;
+    uint16_t errors;
+    uint16_t severity_index;
     uint8_t armed = 0U;
     if (menu.si5351_ok == 0U)
         extra[extras++] = "SI5351 I2C FAIL";
@@ -82,6 +83,10 @@ static void ShowJournal(uint8_t read_ok, uint8_t uart_ok, uint8_t channels_ok)
         extra[extras++] = UARTStore_Status();
     /* Ошибки каналов уже представлены по адресам; общий статус нужен при сбое повторной загрузки. */
     total = (uint16_t)(records + extras + (channels_ok == 0U ? 1U : 0U));
+    errors = (uint16_t)(total - records);
+    for (severity_index = 0U; severity_index < records; severity_index++)
+        if (BootAudit_Severity(severity_index) == 2U)
+            errors++;
     if (total == 0U)
     {
         BootUI_Line(0U, "FLYEL BOOT READY", 0U);
@@ -97,13 +102,10 @@ static void ShowJournal(uint8_t read_ok, uint8_t uart_ok, uint8_t channels_ok)
         uint8_t row;
         int32_t movement;
         BootUI_Clear();
-        strcpy(line, "BOOT LOG ");
-        Text_U32ToDec(number, (uint32_t)top + 1U, 1U);
+        strcpy(line, errors != 0U ? "ERRORS " : "WARNINGS ");
+        Text_U32ToDec(number, errors != 0U ? errors : total, 1U);
         Text_Append(line, number);
-        Text_Append(line, "/");
-        Text_U32ToDec(number, total, 1U);
-        Text_Append(line, number);
-        BootUI_Line(0U, line, 0U);
+        BootUI_Line(0U, line, (uint8_t)(errors != 0U));
         for (row = 0U; row < 5U && top + row < total; row++)
         {
             uint16_t index = (uint16_t)(top + row);
@@ -113,9 +115,14 @@ static void ShowJournal(uint8_t read_ok, uint8_t uart_ok, uint8_t channels_ok)
                 strcpy(line, extra[index - records]);
             else
                 strcpy(line, "CHANNEL LOAD FAIL");
-            BootUI_Line((uint8_t)(row + 1U), line, (uint8_t)(index >= records || BootAudit_Severity(index) == 2U));
+            BootUI_Line((uint8_t)(row + 1U), line, 0U);
         }
-        BootUI_Line(6U, "ENC:LOG F-INP:GO", 0U);
+        Text_U32ToDec(line, (uint32_t)top + 1U, 1U);
+        Text_Append(line, "/");
+        Text_U32ToDec(number, total, 1U);
+        Text_Append(line, number);
+        Text_Append(line, " ENC F-INP:GO");
+        BootUI_Line(6U, line, 0U);
         BootUI_Update();
         if (Input_KeyIsDown(Key_5_3) == 0U)
             armed = 1U;
@@ -141,10 +148,9 @@ void BootStartup_Run(void)
     uint32_t start = App_GetTick500us();
     uint32_t redraw = start - 200U;
     uint32_t elapsed;
-    uint32_t frame = 0U;
     uint8_t read_ok;
     uint16_t pass;
-    BootUI_Line(1U, menu.si5351_ok ? "SI5351 I2C OK" : "SI5351 I2C FAIL", (uint8_t)(menu.si5351_ok == 0U));
+    BootUI_Line(1U, menu.si5351_ok ? "SI5351 I2C OK" : "SI5351 I2C FAIL", 0U);
     while (EEPROM_TestBusy() != 0U)
     {
         (void)EEPROM_TestTask();
@@ -156,7 +162,6 @@ void BootStartup_Run(void)
             Text_Append(line, number);
             Text_Append(line, "%");
             BootUI_Line(2U, line, 0U);
-            BootUI_Spinner(2U, frame++);
             BootUI_Update();
             redraw = App_GetTick500us();
         }
@@ -172,18 +177,12 @@ void BootStartup_Run(void)
         (void)MemoryStore_Task();
         if (UARTStore_Ready() != 0U && MemoryStore_Ready() != 0U)
             break;
-        if ((uint32_t)(App_GetTick500us() - redraw) >= 200U)
-        {
-            BootUI_Spinner(6U, frame++);
-            BootUI_Update();
-            redraw = App_GetTick500us();
-        }
     }
     BootUI_Line(6U,
                 UARTStore_Ready()
                     ? (strcmp(UARTStore_Status(), "LOADED EEPROM") == 0 ? "UART EEPROM OK" : "UART DEFAULT")
                     : "UART LOAD FAIL",
-                (uint8_t)(UARTStore_Ready() == 0U));
+                0U);
     BootUI_Update();
     ShowJournal(read_ok, UARTStore_Ready(), MemoryStore_Ready());
     EEPROM_TestObserve(0);

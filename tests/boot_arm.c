@@ -22,10 +22,12 @@ static uint8_t boot_absent;
 static uint8_t boot_uart_ready;
 static uint8_t boot_mem_ready;
 static uint8_t boot_confirmed;
-static uint32_t boot_spinners;
 static uint8_t boot_journal_frames;
 static char boot_lines[7][32];
 static char boot_headers[4][32];
+static char boot_footers[4][32];
+static uint8_t boot_inverse[7];
+static uint8_t boot_bad_list_inverse;
 static uint8_t boot_saw_ready;
 static uint8_t boot_saw_unread;
 
@@ -139,9 +141,11 @@ void BootUI_Clear(void)
 
 void BootUI_Line(uint8_t row, const char *text, uint8_t inverse)
 {
-    (void)inverse;
     if (row < 7U)
+    {
         strcpy(boot_lines[row], text);
+        boot_inverse[row] = inverse;
+    }
     if (strcmp(text, "FLYEL BOOT READY") == 0)
         boot_saw_ready = 1U;
     if (strcmp(text, "CHANNELS NOT READ") == 0)
@@ -149,19 +153,16 @@ void BootUI_Line(uint8_t row, const char *text, uint8_t inverse)
 }
 
 
-void BootUI_Spinner(uint8_t row, uint32_t tick)
-{
-    (void)row;
-    (void)tick;
-    boot_spinners++;
-}
-
-
 void BootUI_Update(void)
 {
-    if (strcmp(boot_lines[6], "ENC:LOG F-INP:GO") == 0 && boot_journal_frames < 4U)
+    if (strstr(boot_lines[6], " ENC F-INP:GO") != 0 && boot_journal_frames < 4U)
     {
+        uint8_t row;
+        for (row = 1U; row < 7U; row++)
+            if (boot_inverse[row] != 0U)
+                boot_bad_list_inverse = 1U;
         strcpy(boot_headers[boot_journal_frames], boot_lines[0]);
+        strcpy(boot_footers[boot_journal_frames], boot_lines[6]);
         boot_journal_frames++;
     }
 }
@@ -179,10 +180,10 @@ static void BootFixture(void)
     boot_uart_ready = 1U;
     boot_mem_ready = 1U;
     boot_confirmed = 0U;
-    boot_spinners = 0U;
     boot_journal_frames = 0U;
     boot_saw_ready = 0U;
     boot_saw_unread = 0U;
+    boot_bad_list_inverse = 0U;
     BootStartup_Begin();
     EEPROM_TestInit();
 }
@@ -202,7 +203,7 @@ int test_boot_empty_channels_and_crc(void)
     CHECK(boot_reads == 256U);
     CHECK(BootAudit_Free() == 99U && BootAudit_Used() == 0U && BootAudit_Bad() == 0U);
     CHECK(BootAudit_Count() == 0U && boot_journal_frames == 0U && boot_saw_ready != 0U);
-    CHECK(boot_spinners > 2U && boot_tick == 5120U + 1200U);
+    CHECK(boot_tick == 5120U + 1200U);
     CHECK(EEPROM_TestStatus()[0] == '\0' && eeprom_observer == 0);
     return 0;
 }
@@ -257,10 +258,12 @@ int test_boot_large_journal_scrolls_and_confirms(void)
     CHECK(BootAudit_Count() == 300U && BootAudit_Bad() == 99U);
     CHECK(BootAudit_Free() == 0U && BootAudit_Used() == 0U);
     CHECK(boot_confirmed != 0U && boot_saw_ready == 0U);
-    CHECK(strcmp(boot_headers[0], "BOOT LOG 1/300") == 0);
-    CHECK(strcmp(boot_headers[1], "BOOT LOG 300/300") == 0);
-    CHECK(strcmp(boot_headers[2], "BOOT LOG 1/300") == 0);
-    CHECK(strcmp(boot_headers[3], "BOOT LOG 3/300") == 0);
+    CHECK(strcmp(boot_headers[0], "ERRORS 300") == 0 && boot_inverse[0] == 1U);
+    CHECK(boot_bad_list_inverse == 0U);
+    CHECK(strcmp(boot_footers[0], "1/300 ENC F-INP:GO") == 0);
+    CHECK(strcmp(boot_footers[1], "300/300 ENC F-INP:GO") == 0);
+    CHECK(strcmp(boot_footers[2], "1/300 ENC F-INP:GO") == 0);
+    CHECK(strcmp(boot_footers[3], "3/300 ENC F-INP:GO") == 0);
     return 0;
 }
 
@@ -275,7 +278,7 @@ int test_boot_missing_eeprom_is_not_99_empty_channels(void)
     BootStartup_Run();
     CHECK(boot_reads == 0U && boot_confirmed != 0U && boot_saw_unread != 0U);
     CHECK(BootAudit_Free() == 0U && BootAudit_Bad() == 0U);
-    CHECK(strcmp(boot_headers[0], "BOOT LOG 1/4") == 0);
+    CHECK(strcmp(boot_headers[0], "ERRORS 4") == 0 && boot_bad_list_inverse == 0U);
     return 0;
 }
 
