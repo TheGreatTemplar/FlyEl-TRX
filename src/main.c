@@ -9,6 +9,7 @@
 #include "generator_menu.h"
 #include "startup_splash.h"
 #include "app_time.h"
+#include "boot_startup.h"
 #include <stdint.h>
 
 /*
@@ -292,9 +293,10 @@ int main(void)
     LCD_GPIO_Init();
     LCD_Init();
 
-    App_ShowStartupScreen();
-
+    BootStartup_Begin();
     GeneratorMenu_Init();
+    BootStartup_Run();
+    App_ShowStartupScreen();
 
     while (1)
     {

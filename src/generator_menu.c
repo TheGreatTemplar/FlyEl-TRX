@@ -112,7 +112,7 @@ void GeneratorMenu_Init(void)
 
     EEPROM_TestInit();
 
-    Screens_Redraw();
+    menu.need_redraw = 1U;
 }
 
 

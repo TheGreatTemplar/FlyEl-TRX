@@ -11,6 +11,26 @@ static uint8_t eeprom_result_visible;
 static uint16_t eeprom_offset;
 static uint16_t eeprom_crc;
 static uint32_t eeprom_result_tick;
+static uint8_t eeprom_read_failed;
+static void (*eeprom_observer)(uint16_t, const uint8_t *);
+
+void EEPROM_TestObserve(void (*observer)(uint16_t, const uint8_t *))
+{
+    eeprom_observer = observer;
+}
+
+
+uint16_t EEPROM_TestProgress(void)
+{
+    return eeprom_offset;
+}
+
+
+void EEPROM_TestHideResult(void)
+{
+    eeprom_result_visible = 0U;
+    eeprom_status[0] = '\0';
+}
 
 
 static uint8_t redraw_requested;
@@ -48,6 +68,7 @@ void EEPROM_TestInit(void)
     eeprom_address = 0U;
     eeprom_offset = 0U;
     eeprom_crc = 0xFFFFU;
+    eeprom_read_failed = 0U;
     eeprom_check_running = 1U;
     eeprom_result_visible = 0U;
 }
@@ -65,13 +86,19 @@ static void RunTest(void)
         }
         if (AT24C256_Read(eeprom_address, eeprom_offset, block, sizeof(block)) != I2C2_SOFT_OK)
         {
-            EepromTest_Finish(0U);
-            return;
+            eeprom_read_failed = 1U;
+            if (eeprom_observer != 0)
+                eeprom_observer(eeprom_offset, 0);
         }
-        eeprom_crc = AT24C256_Crc16Update(eeprom_crc, block, sizeof(block));
+        else
+        {
+            eeprom_crc = AT24C256_Crc16Update(eeprom_crc, block, sizeof(block));
+            if (eeprom_observer != 0)
+                eeprom_observer(eeprom_offset, block);
+        }
         eeprom_offset = (uint16_t)(eeprom_offset + sizeof(block));
         if (eeprom_offset == AT24C256_CAPACITY)
-            EepromTest_Finish(1U);
+            EepromTest_Finish((uint8_t)(eeprom_read_failed == 0U));
     }
     else if (eeprom_result_visible != 0U && (uint32_t)(App_GetTick500us() - eeprom_result_tick) >= 6000U)
     {

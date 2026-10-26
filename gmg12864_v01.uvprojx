@@ -794,6 +794,21 @@
               <FilePath>.\src\uart_config.c</FilePath>
             </File>
             <File>
+              <FileName>boot_audit.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\boot_audit.c</FilePath>
+            </File>
+            <File>
+              <FileName>boot_startup.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\boot_startup.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_boot.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\ui_boot.c</FilePath>
+            </File>
+            <File>
               <FileName>uart_store.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\uart_store.c</FilePath>
