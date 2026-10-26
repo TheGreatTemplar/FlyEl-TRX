@@ -10,6 +10,40 @@ static void OpenServiceItem(uint8_t section, uint8_t item)
 }
 
 
+int test_factory_menu_confirmation_cancel_tx_and_restart(void)
+{
+    InitControls();
+    OpenServiceItem(16U, 2U);
+    CHECK(Service_Stage() == SERVICE_FACTORY && mock_factory_starts == 0U);
+    Service_HandleKey(Key_5_3);
+    CHECK(Service_Stage() == SERVICE_SECTION && mock_factory_starts == 0U);
+    Service_HandleKey(Key_5_3);
+    Service_Encoder(1);
+    CHECK(ServiceFactory_Confirmed() != 0U);
+    Service_HandleKey(Key_9_3);
+    CHECK(Service_Stage() == SERVICE_SECTION && mock_factory_starts == 0U);
+    Service_HandleKey(Key_5_3);
+    CHECK(ServiceFactory_Confirmed() == 0U);
+    Service_Encoder(1);
+    menu.tx_active = 1U;
+    Service_HandleKey(Key_5_3);
+    CHECK(mock_factory_starts == 0U && strcmp(ServiceFactory_Status(), "STOP TX FIRST") == 0);
+    menu.tx_active = 0U;
+    Service_HandleKey(Key_5_3);
+    CHECK(mock_factory_starts == 1U && Service_Stage() == SERVICE_FACTORY);
+    Service_Encoder(-1);
+    Service_HandleKey(Key_5_1);
+    CHECK(Service_Stage() == SERVICE_FACTORY && ServiceFactory_Confirmed() != 0U);
+    mock_factory_state = EEPROM_FACTORY_DONE;
+    Service_HandleKey(Key_9_3);
+    CHECK(mock_reboots == 0U);
+    Service_HandleKey(Key_5_3);
+    CHECK(mock_reboots == 1U);
+    mock_factory_state = EEPROM_FACTORY_IDLE;
+    return 0;
+}
+
+
 int test_service_uart_editor_cancel_validation_and_apply(void)
 {
     char value[16];

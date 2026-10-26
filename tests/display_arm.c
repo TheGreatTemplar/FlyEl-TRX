@@ -11,6 +11,7 @@
 void LCD_TestUpdate(void);
 #define LCD_Update LCD_TestUpdate
 #include "ui_service_tools.c"
+#include "ui_service_factory.c"
 #include "ui_service.c"
 #include "ui_settings.c"
 #include "ui_status.c"
@@ -18,7 +19,7 @@ void LCD_TestUpdate(void);
 #include "ui_boot.c"
 #undef LCD_Update
 
-uint8_t display_snapshots[19][1024];
+uint8_t display_snapshots[21][1024];
 uint32_t display_count;
 static const char *test_eeprom_message;
 
@@ -43,7 +44,7 @@ const char *EEPROM_TestStatus(void)
 
 void LCD_TestUpdate(void)
 {
-    if (display_count < 19U)
+    if (display_count < 21U)
         memcpy(display_snapshots[display_count++], lcd_buffer, 1024U);
 }
 
@@ -137,7 +138,7 @@ int test_display_snapshots(void)
     BootUI_Line(0U, "FLYEL BOOT", 0U);
     BootUI_Line(1U, "SI5351 I2C OK", 0U);
     BootUI_Line(2U, "EEPROM 57%", 0U);
-    BootUI_Spinner(2U, 200U);
+    BootUI_Spinner(2U, 1U);
     BootUI_Update();
     BootUI_Clear();
     BootUI_Line(0U, "BOOT LOG 1/300", 0U);
@@ -149,6 +150,11 @@ int test_display_snapshots(void)
     BootUI_Line(6U, "ENC:LOG F-INP:GO", 0U);
     BootUI_Update();
     CHECK(display_count == 19U);
+    ServiceFactory_Open();
+    ServiceTools_DrawFactory();
+    ServiceFactory_Encoder(1);
+    ServiceTools_DrawFactory();
+    CHECK(display_count == 21U);
     return 0;
 }
 
@@ -162,6 +168,7 @@ int test_boot_display_two_blank_pixel_rows_and_text_fit(void)
     CHECK(LCD_FindStatusGlyph('%')->symbol == '%');
     CHECK(LCD_FindStatusGlyph('/')->symbol == '/');
     CHECK(LCD_FindStatusGlyph('@')->symbol == '@');
+    CHECK(LCD_FindStatusGlyph('?')->symbol == '?');
     for (row = 0U; row < sizeof(labels) / sizeof(labels[0]); row++)
         CHECK(LCD_GetText5x7Width(labels[row], 1U) <= 128U);
     BootUI_Clear();
@@ -176,6 +183,25 @@ int test_boot_display_two_blank_pixel_rows_and_text_fit(void)
             for (x = 0U; x < 128U; x++)
                 CHECK((lcd_buffer[(uint16_t)(y / 8U) * 128U + x] & (uint8_t)(1U << (y % 8U))) == 0U);
     }
+    return 0;
+}
+
+
+int test_boot_spinner_advances_every_frame_even_after_long_transactions(void)
+{
+    uint8_t frames[4][1024];
+    uint8_t i;
+    for (i = 0U; i < 4U; i++)
+    {
+        BootUI_Clear();
+        BootUI_Spinner(2U, i);
+        memcpy(frames[i], lcd_buffer, 1024U);
+    }
+    for (i = 1U; i < 4U; i++)
+        CHECK(memcmp(frames[i - 1U], frames[i], 1024U) != 0);
+    BootUI_Clear();
+    BootUI_Spinner(2U, 4U);
+    CHECK(memcmp(frames[0], lcd_buffer, 1024U) == 0);
     return 0;
 }
 

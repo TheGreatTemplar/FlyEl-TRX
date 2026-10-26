@@ -28,7 +28,7 @@ void BootStartup_Begin(void)
     BootUI_Clear();
     BootUI_Line(0U, "FLYEL BOOT", 0U);
     BootUI_Line(1U, "SI5351 INIT", 0U);
-    BootUI_Spinner(1U, App_GetTick500us());
+    BootUI_Spinner(1U, 0U);
     BootUI_Update();
 }
 
@@ -113,7 +113,7 @@ static void ShowJournal(uint8_t read_ok, uint8_t uart_ok, uint8_t channels_ok)
                 strcpy(line, extra[index - records]);
             else
                 strcpy(line, "CHANNEL LOAD FAIL");
-            BootUI_Line((uint8_t)(row + 1U), line, 1U);
+            BootUI_Line((uint8_t)(row + 1U), line, (uint8_t)(index >= records || BootAudit_Severity(index) == 2U));
         }
         BootUI_Line(6U, "ENC:LOG F-INP:GO", 0U);
         BootUI_Update();
@@ -141,6 +141,7 @@ void BootStartup_Run(void)
     uint32_t start = App_GetTick500us();
     uint32_t redraw = start - 200U;
     uint32_t elapsed;
+    uint32_t frame = 0U;
     uint8_t read_ok;
     uint16_t pass;
     BootUI_Line(1U, menu.si5351_ok ? "SI5351 I2C OK" : "SI5351 I2C FAIL", (uint8_t)(menu.si5351_ok == 0U));
@@ -155,7 +156,7 @@ void BootStartup_Run(void)
             Text_Append(line, number);
             Text_Append(line, "%");
             BootUI_Line(2U, line, 0U);
-            BootUI_Spinner(2U, App_GetTick500us());
+            BootUI_Spinner(2U, frame++);
             BootUI_Update();
             redraw = App_GetTick500us();
         }
@@ -171,10 +172,11 @@ void BootStartup_Run(void)
         (void)MemoryStore_Task();
         if (UARTStore_Ready() != 0U && MemoryStore_Ready() != 0U)
             break;
-        if (pass % 8U == 0U)
+        if ((uint32_t)(App_GetTick500us() - redraw) >= 200U)
         {
-            BootUI_Spinner(6U, App_GetTick500us());
+            BootUI_Spinner(6U, frame++);
             BootUI_Update();
+            redraw = App_GetTick500us();
         }
     }
     BootUI_Line(6U,

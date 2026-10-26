@@ -18,6 +18,7 @@
 #include "scan_control.h"
 #include "service_control.h"
 #include "uart_store.h"
+#include "eeprom_factory.h"
 
 generator_menu_t menu;
 
@@ -121,6 +122,8 @@ void GeneratorMenu_Task(void)
 {
     int32_t steps;
     input_key_t key;
+    if (EEPROMFactory_Task() != 0U)
+        menu.need_redraw = 1U;
     if (EEPROM_TestTask() != 0U)
         menu.need_redraw = 1U;
     if (UARTStore_Task() != 0U)

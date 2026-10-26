@@ -7,5 +7,7 @@
 uint32_t App_GetTick500us(void);
 /* Стартовая блокирующая задержка; TIM2 должен быть уже запущен. */
 void App_DelayMs(uint32_t ms);
+/* Перезапуск после завершённой/прерванной инициализации EEPROM, из основного цикла. */
+void App_Reboot(void);
 
 #endif

@@ -272,6 +272,13 @@ static void App_ShowStartupScreen(void)
 }
 
 
+/* Завершает сброс EEPROM перезапуском, чтобы не использовать прежний кэш каналов. */
+__attribute__((noreturn)) void App_Reboot(void)
+{
+    NVIC_SystemReset();
+}
+
+
 /* Инициализирует периферию в зависимом порядке и запускает кооперативный основной цикл. */
 int main(void)
 {

@@ -5,6 +5,7 @@
 #include "memory_store.c"
 #include "uart_config.c"
 #include "uart_store.c"
+#include "eeprom_factory.c"
 #define CHECK(expr)                                                                                                    \
     do                                                                                                                 \
     {                                                                                                                  \
@@ -99,6 +100,7 @@ static void Run(uint32_t count)
 
 static void InitChip(void)
 {
+    factory_state = EEPROM_FACTORY_IDLE;
     memset(chip, 0xFF, sizeof(chip));
     test_tick = 0U;
     writes = 0U;
@@ -114,6 +116,96 @@ static void InitChip(void)
     UARTStore_Init();
     uart_actual = (uart_config_t){115200U, 8U, UART_PARITY_NONE, UART_STOP_ONE, 0U};
     Run(205U);
+}
+
+
+static void RunFactory(uint32_t count)
+{
+    while (count-- != 0U)
+    {
+        test_tick += 2U;
+        (void)EEPROMFactory_Task();
+        (void)MemoryStore_Task();
+        (void)UARTStore_Task();
+    }
+}
+
+
+int test_factory_erases_all_pages_verifies_and_locks_other_stores(void)
+{
+    uint32_t i;
+    uart_config_t config = {9600U, 8U, UART_PARITY_NONE, UART_STOP_ONE, 0U};
+    InitChip();
+    memset(chip, 0, sizeof(chip));
+    CHECK(EEPROMFactory_Start() != 0U);
+    CHECK(EEPROMFactory_Locked() != 0U && writes == 0U);
+    CHECK(MemoryStore_Request(0U, 0) == 0U && UARTStore_Request(&config) == 0U);
+    RunFactory(5000U);
+    CHECK(EEPROMFactory_State() == EEPROM_FACTORY_DONE && writes == 512U);
+    CHECK(EEPROMFactory_Offset() == 32768U);
+    for (i = 0U; i < sizeof(chip); i++)
+        CHECK(chip[i] == 0xFFU);
+    CHECK(EEPROMFactory_Start() == 0U && EEPROMFactory_Locked() != 0U);
+    CHECK(MemoryStore_Request(0U, 0) == 0U && UARTStore_Request(&config) == 0U);
+    /* Модель выключения питания: после старта кэш пуст, UART по умолчанию. */
+    factory_state = EEPROM_FACTORY_IDLE;
+    MemoryStore_Init();
+    UARTStore_Init();
+    for (i = 0U; i < 210U; i++)
+    {
+        test_tick += 2U;
+        (void)UARTStore_Task();
+        (void)MemoryStore_Task();
+    }
+    CHECK(MemoryStore_Ready() != 0U && UARTStore_Ready() != 0U);
+    CHECK(MemoryStore_Get(0U, 0) == 0U && MemoryStore_Get(98U, 0) == 0U);
+    CHECK(strcmp(UARTStore_Status(), "DEFAULT 115200 8N1") == 0);
+    return 0;
+}
+
+
+int test_factory_write_protection_missing_chip_and_timeout(void)
+{
+    InitChip();
+    absent = 1U;
+    CHECK(EEPROMFactory_Start() == 0U && writes == 0U && EEPROMFactory_Locked() == 0U);
+    absent = 0U;
+    memset(chip, 0, sizeof(chip));
+    write_protected = 1U;
+    CHECK(EEPROMFactory_Start() != 0U);
+    RunFactory(40U);
+    CHECK(EEPROMFactory_State() == EEPROM_FACTORY_FAILED && EEPROMFactory_Offset() == 0U);
+    CHECK(strcmp(EEPROMFactory_Status(), "EEPROM VERIFY FAIL") == 0 && writes == 1U);
+    InitChip();
+    write_cycle_ticks = 1000U;
+    CHECK(EEPROMFactory_Start() != 0U);
+    RunFactory(40U);
+    CHECK(EEPROMFactory_State() == EEPROM_FACTORY_FAILED);
+    CHECK(strcmp(EEPROMFactory_Status(), "EEPROM ACK TIMEOUT") == 0);
+    InitChip();
+    startup_busy = 1U;
+    CHECK(EEPROMFactory_Start() == 0U && writes == 0U);
+    startup_busy = 0U;
+    CHECK(MemoryStore_Request(0U, 0) != 0U);
+    CHECK(EEPROMFactory_Start() == 0U);
+    return 0;
+}
+
+
+int test_factory_waits_from_stop_and_accepts_late_ready_ack(void)
+{
+    InitChip();
+    transfer_ticks = 60U;
+    memset(chip, 0, sizeof(chip));
+    CHECK(EEPROMFactory_Start() != 0U);
+    (void)EEPROMFactory_Task();
+    CHECK(factory_wait == test_tick && test_tick >= 60U);
+    test_tick += 200U;
+    (void)EEPROMFactory_Task();
+    CHECK(EEPROMFactory_State() == EEPROM_FACTORY_VERIFY);
+    (void)EEPROMFactory_Task();
+    CHECK(EEPROMFactory_Offset() == 64U && EEPROMFactory_State() == EEPROM_FACTORY_WRITE);
+    return 0;
 }
 
 

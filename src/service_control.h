@@ -11,7 +11,8 @@ enum
     SERVICE_BAND,
     SERVICE_VIEW,
     SERVICE_UART,
-    SERVICE_KEY_TEST
+    SERVICE_KEY_TEST,
+    SERVICE_FACTORY
 };
 void Service_Init(void);
 /* Открывает SERVICE только вне TX. Вызывается из основного цикла после сочетания. */

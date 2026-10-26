@@ -8,6 +8,7 @@
 #include "at24c256.h"
 #include <string.h>
 #include "uart_store.h"
+#include "eeprom_factory.h"
 
 #if MEMORY_CHANNEL_COUNT > 99U || MEMORY_CHANNEL_COUNT < 1U
 #error MEMORY_CHANNEL_COUNT must be in 1..99
@@ -154,6 +155,8 @@ static uint8_t VerifyWrite(void)
 
 uint8_t MemoryStore_Task(void)
 {
+    if (EEPROMFactory_Locked() != 0U)
+        return 0U;
     uint32_t now = App_GetTick500us();
     i2c2_soft_status_t status;
     if (UARTStore_Busy() != 0U)
@@ -243,6 +246,11 @@ uint8_t MemoryStore_Get(uint8_t channel, radio_preset_t *preset)
 
 uint8_t MemoryStore_Request(uint8_t channel, const radio_preset_t *preset)
 {
+    if (EEPROMFactory_Locked() != 0U)
+    {
+        Message("EEPROM RESET");
+        return 0U;
+    }
     if (UARTStore_Busy() != 0U)
     {
         Message("MEM BUSY");

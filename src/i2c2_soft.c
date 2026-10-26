@@ -5,11 +5,14 @@
 #define SCL_MASK (1UL << I2C2_SCL_PIN)
 #define SDA_MASK (1UL << I2C2_SDA_PIN)
 #define CLOCK_WAIT_LIMIT 10000UL
+/* SYSCLK=72 МГц: 72 такта = 1 мкс. Три паузы на бит дают SCL ниже 400 кГц.
+ * Реальная частота дополнительно зависит от GPIO и фронтов на макете. */
+#define I2C2_DELAY_CYCLES 72UL
 
 static void Delay(void)
 {
-    volatile uint32_t i;
-    for (i = 0U; i < 80U; i++)
+    uint32_t start = DWT->CYCCNT;
+    while ((uint32_t)(DWT->CYCCNT - start) < I2C2_DELAY_CYCLES)
     {
         __NOP();
     }
@@ -136,6 +139,9 @@ static i2c2_soft_status_t ReadByte(uint8_t *value, uint8_t ack)
 /* Настраивает PB8/PB9 как open-drain для отдельной шины EEPROM. */
 void I2C2_Soft_Init(void)
 {
+    /* Не обнуляем общий счётчик DWT: отладчик может использовать его параллельно. */
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
     RCC->APB2ENR |= RCC_APB2ENR_IOPBEN;
     /* PB8/PB9, open drain 2 MHz. External I2C pull-ups are required. */
     I2C2_GPIO->BSRR = SCL_MASK | SDA_MASK;

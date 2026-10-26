@@ -18,10 +18,12 @@ void BootUI_Line(uint8_t row, const char *text, uint8_t inverse)
 
 
 /* Спиннер рисуется пикселями: для него не требуется расширять таблицу шрифта. */
-void BootUI_Spinner(uint8_t row, uint32_t tick)
+void BootUI_Spinner(uint8_t row, uint32_t frame)
 {
     uint8_t y = (uint8_t)(row * 9U);
-    uint8_t phase = (uint8_t)((tick / 200U) % 4U);
+    uint8_t phase = (uint8_t)(frame % 4U);
+    if (row >= 7U)
+        return;
     LCD_FillRectangle(121U, y, 6U, 6U, PX_OFF);
     switch (phase)
     {

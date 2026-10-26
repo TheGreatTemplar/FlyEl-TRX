@@ -9,6 +9,47 @@ static uint8_t cache_used[MEMORY_CHANNEL_COUNT];
 static radio_preset_t cache[MEMORY_CHANNEL_COUNT];
 static uart_config_t mock_uart_config = {115200U, 8U, UART_PARITY_NONE, UART_STOP_ONE, 0U};
 static uint32_t mock_uart_saves;
+static uint8_t mock_factory_state;
+static uint32_t mock_factory_starts;
+static uint32_t mock_reboots;
+
+uint8_t EEPROMFactory_State(void)
+{
+    return mock_factory_state;
+}
+
+
+uint8_t EEPROMFactory_Locked(void)
+{
+    return (uint8_t)(mock_factory_state != EEPROM_FACTORY_IDLE);
+}
+
+
+uint16_t EEPROMFactory_Offset(void)
+{
+    return 0U;
+}
+
+
+const char *EEPROMFactory_Status(void)
+{
+    return "TEST RESET";
+}
+
+
+uint8_t EEPROMFactory_Start(void)
+{
+    mock_factory_starts++;
+    mock_factory_state = EEPROM_FACTORY_WRITE;
+    return 1U;
+}
+
+
+void App_Reboot(void)
+{
+    mock_reboots++;
+}
+
 
 const uart_config_t *UART1_GetConfig(void)
 {

@@ -223,7 +223,8 @@ int test_boot_selects_newest_copy_and_tombstone(void)
     {
         char line[32];
         BootAudit_Line(0U, line);
-        CHECK(strcmp(line, "CH 02 B: CRC ERROR") == 0);
+        CHECK(strcmp(line, "CH 02 B: CRC WARN") == 0);
+        CHECK(BootAudit_Severity(0U) == 1U);
     }
     return 0;
 }
@@ -243,6 +244,7 @@ int test_boot_block_read_failure_continues_and_invalidates_crc(void)
     CHECK(strcmp(line, "READ FAIL @4080") == 0);
     BootAudit_Line(1U, line);
     CHECK(strcmp(line, "CH 02 NO VALID COPY") == 0);
+    CHECK(BootAudit_Severity(0U) == 2U && BootAudit_Severity(1U) == 2U);
     return 0;
 }
 
@@ -328,5 +330,32 @@ int test_boot_format_errors_are_distinct_from_crc_errors(void)
     boot_chip[63] = (uint8_t)(crc >> 8U);
     BootAudit_Block(0U, boot_chip);
     CHECK(BootAudit_Count() == 2U);
+    return 0;
+}
+
+
+int test_boot_first_save_has_one_copy_without_error_and_bad_spare_is_warning(void)
+{
+    char line[32];
+    radio_preset_t preset = {7100000U, RADIO_LSB, 0U, 0U, 2U};
+    BootFixture();
+    MemoryRecord_Encode(&boot_chip[0x4040], 0U, 1U, &preset);
+    MemoryRecord_Encode(&boot_chip[0x4080], 1U, 1U, &preset);
+    boot_chip[0x4100] = 0U;
+    MemoryRecord_Encode(&boot_chip[0x4140], 2U, 1U, &preset);
+    MemoryRecord_Encode(&boot_chip[0x4180], 3U, 1U, &preset);
+    boot_chip[0x41C0] = 0U;
+    boot_chip[0x4200] = 0U;
+    ScanBoot();
+    CHECK(BootAudit_Used() == 4U && BootAudit_Free() == 94U && BootAudit_Bad() == 1U);
+    CHECK(BootAudit_Count() == 4U);
+    BootAudit_Line(0U, line);
+    CHECK(strcmp(line, "CH 03 A: CRC WARN") == 0 && BootAudit_Severity(0U) == 1U);
+    BootAudit_Line(1U, line);
+    CHECK(strcmp(line, "CH 04 B: CRC WARN") == 0 && BootAudit_Severity(1U) == 1U);
+    BootAudit_Line(2U, line);
+    CHECK(strcmp(line, "CH 05 A: CRC ERROR") == 0 && BootAudit_Severity(2U) == 2U);
+    BootAudit_Line(3U, line);
+    CHECK(strcmp(line, "CH 05 NO VALID COPY") == 0 && BootAudit_Severity(3U) == 2U);
     return 0;
 }

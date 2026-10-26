@@ -11,4 +11,6 @@ uint8_t BootAudit_Bad(void);
 uint16_t BootAudit_Count(void);
 /* Строка журнала до 25 символов; буфер вызывающего — не менее 32 байт. */
 void BootAudit_Line(uint16_t index, char *text);
+/* 1 — замечание к резервной копии при исправной рабочей; 2 — ошибка. */
+uint8_t BootAudit_Severity(uint16_t index);
 #endif

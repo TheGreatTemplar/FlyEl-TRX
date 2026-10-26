@@ -809,6 +809,21 @@
               <FilePath>.\src\ui_boot.c</FilePath>
             </File>
             <File>
+              <FileName>eeprom_factory.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\eeprom_factory.c</FilePath>
+            </File>
+            <File>
+              <FileName>service_factory.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\service_factory.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_service_factory.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\ui_service_factory.c</FilePath>
+            </File>
+            <File>
               <FileName>uart_store.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\uart_store.c</FilePath>

@@ -157,7 +157,7 @@ static void Hex4(char *text, uint16_t value)
 
 
 /* Генерирует строки по запросу; даже сотни ошибок занимают менее 400 байт SRAM. */
-static uint16_t Journal(uint16_t wanted, char *text)
+static uint16_t Journal(uint16_t wanted, char *text, uint8_t *severity)
 {
     uint16_t count = 0U;
     uint16_t block;
@@ -167,10 +167,15 @@ static uint16_t Journal(uint16_t wanted, char *text)
     {
         if ((read_errors[block / 8U] & (uint8_t)(1U << (block % 8U))) == 0U)
             continue;
-        if (count++ == wanted && text != 0)
+        if (count++ == wanted)
         {
-            strcpy(text, "READ FAIL @");
-            Hex4(&text[11], (uint16_t)(block * 128U));
+            if (severity != 0)
+                *severity = 2U;
+            if (text != 0)
+            {
+                strcpy(text, "READ FAIL @");
+                Hex4(&text[11], (uint16_t)(block * 128U));
+            }
         }
     }
     for (item = 0U; item <= MEMORY_CHANNEL_COUNT; item++)
@@ -183,7 +188,11 @@ static uint16_t Journal(uint16_t wanted, char *text)
                             : (uint8_t)(PairGood(states) == 0U && (states[0] >= AUDIT_CRC || states[1] >= AUDIT_CRC));
             if (issue == 0U)
                 continue;
-            if (count++ != wanted || text == 0)
+            if (count++ != wanted)
+                continue;
+            if (severity != 0)
+                *severity = PairGood(states) ? 1U : 2U;
+            if (text == 0)
                 continue;
             if (item == 0U)
                 strcpy(text, "UART");
@@ -197,7 +206,10 @@ static uint16_t Journal(uint16_t wanted, char *text)
             else
             {
                 Text_Append(text, (slot == 0U) ? " A: " : " B: ");
-                Text_Append(text, (states[slot] == AUDIT_CRC) ? "CRC ERROR" : "FORMAT ERR");
+                if (PairGood(states) != 0U)
+                    Text_Append(text, (states[slot] == AUDIT_CRC) ? "CRC WARN" : "FORMAT WARN");
+                else
+                    Text_Append(text, (states[slot] == AUDIT_CRC) ? "CRC ERROR" : "FORMAT ERR");
             }
         }
     }
@@ -207,12 +219,20 @@ static uint16_t Journal(uint16_t wanted, char *text)
 
 uint16_t BootAudit_Count(void)
 {
-    return Journal(0U, 0);
+    return Journal(0U, 0, 0);
 }
 
 
 void BootAudit_Line(uint16_t index, char *text)
 {
     text[0] = '\0';
-    (void)Journal(index, text);
+    (void)Journal(index, text, 0);
+}
+
+
+uint8_t BootAudit_Severity(uint16_t index)
+{
+    uint8_t severity = 0U;
+    (void)Journal(index, 0, &severity);
+    return severity;
 }

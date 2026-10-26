@@ -6,6 +6,7 @@
 #include "memory_record.h"
 #include "eeprom_startup.h"
 #include "app_time.h"
+#include "eeprom_factory.h"
 #include <string.h>
 
 enum
@@ -104,6 +105,8 @@ static uint8_t UartStoreFail(const char *reason)
 
 uint8_t UARTStore_Task(void)
 {
+    if (EEPROMFactory_Locked() != 0U)
+        return 0U;
     uint8_t data[64];
     uart_config_t config;
     uint32_t generation;
@@ -193,6 +196,11 @@ uint8_t UARTStore_Task(void)
 
 uint8_t UARTStore_Request(const uart_config_t *config)
 {
+    if (EEPROMFactory_Locked() != 0U)
+    {
+        uart_store_message = "EEPROM RESET";
+        return 0U;
+    }
     uint16_t crc;
     if (UARTConfig_Valid(config) == 0U)
     {
