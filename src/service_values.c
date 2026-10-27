@@ -4,6 +4,7 @@
 #include "radio_panel.h"
 #include "text_utils.h"
 #include "gmg12864.h"
+#include "build_info.h"
 
 void ServiceValues_Read(uint16_t id, char *value, char *detail)
 {
@@ -16,8 +17,8 @@ void ServiceValues_Read(uint16_t id, char *value, char *detail)
             Text_Append(detail, "BOARD REVISION");
             break;
         case 102U:
-            Text_Append(value, "FLYEL DEV");
-            Text_Append(detail, "STM32F103C8T6");
+            Text_Append(value, FW_GIT_SHORT);
+            Text_Append(detail, FW_BUILD_DATE);
             break;
         case 104U:
         case 105U:

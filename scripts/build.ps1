@@ -5,6 +5,7 @@ $taskRoot = Split-Path -Parent $PSScriptRoot
 $taskTools = Resolve-FlyElToolchain -ToolchainBin $ToolchainBin -PacksRoot $PacksRoot
 $taskOutput = Join-Path $taskRoot 'build'
 New-Item -ItemType Directory -Force -Path $taskOutput | Out-Null
+& (Join-Path $PSScriptRoot 'update-build-info.ps1') -Root $taskRoot
 $taskSources = @(Get-ChildItem -LiteralPath (Join-Path $taskRoot 'src') -Filter '*.c' | Sort-Object Name)
 $taskObjects = @()
 $taskCommon = @('--target=arm-arm-none-eabi', '-mcpu=cortex-m3', '-mthumb', '-fshort-enums', '-fshort-wchar',

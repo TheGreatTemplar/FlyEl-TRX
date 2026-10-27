@@ -10,6 +10,28 @@ static void OpenServiceItem(uint8_t section, uint8_t item)
 }
 
 
+int test_fw_version_menu_is_read_only_and_encoder_changes_pages(void)
+{
+    uint32_t saves;
+    uint8_t contrast;
+    InitControls();
+    saves = mock_uart_saves;
+    contrast = LCD_GetContrast();
+    OpenServiceItem(0U, 1U);
+    CHECK(Service_Stage() == SERVICE_VERSION && FWInfo_Page() == 0U);
+    Service_Encoder(1);
+    CHECK(FWInfo_Page() == 1U);
+    Service_HandleKey(Key_5_3);
+    CHECK(FWInfo_Page() == 2U);
+    Tap(Key_2_1, 2500U);
+    CHECK(store_calls == 0U && mock_uart_saves == saves && menu.rf_hz == 28200000U);
+    CHECK(LCD_GetContrast() == contrast);
+    Service_HandleKey(Key_5_1);
+    CHECK(Service_Stage() == SERVICE_SECTION && Service_Item() == 1U);
+    return 0;
+}
+
+
 int test_lcd_test_navigation_timing_pause_resume_and_no_radio_changes(void)
 {
     uint8_t page;

@@ -16,6 +16,7 @@ void LCD_TestUpdate(void);
 #include "ui_service_contrast.c"
 #include "ui_lcd_test.c"
 #include "ui_service_hmi.c"
+#include "ui_fw_version.c"
 #include "ui_service.c"
 #include "ui_settings.c"
 #include "ui_status.c"
@@ -23,8 +24,9 @@ void LCD_TestUpdate(void);
 #include "ui_boot.c"
 #undef LCD_Update
 
-uint8_t display_snapshots[29][1024];
+uint8_t display_snapshots[40][1024];
 uint32_t display_count;
+static uint32_t display_limit;
 static const char *test_eeprom_message;
 
 spi1_status_t SPI1_SendByte(uint8_t data)
@@ -48,7 +50,7 @@ const char *EEPROM_TestStatus(void)
 
 void LCD_TestUpdate(void)
 {
-    if (display_count < 29U)
+    if (display_count < display_limit && display_count < 40U)
         memcpy(display_snapshots[display_count++], lcd_buffer, 1024U);
 }
 
@@ -57,6 +59,7 @@ int test_display_snapshots(void)
 {
     InitControls();
     display_count = 0U;
+    display_limit = 29U + FWInfo_Pages();
     test_eeprom_message = "";
     Screens_Redraw();
     Tap(Key_5_3, 100U);
@@ -176,6 +179,16 @@ int test_display_snapshots(void)
         }
     }
     CHECK(display_count == 29U);
+    {
+        uint8_t page;
+        FWInfo_Open();
+        for (page = 0U; page < FWInfo_Pages(); page++)
+        {
+            ServiceTools_DrawVersion();
+            FWInfo_Encoder(1);
+        }
+        CHECK(display_count == (uint32_t)29U + FWInfo_Pages());
+    }
     return 0;
 }
 

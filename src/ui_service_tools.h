@@ -6,4 +6,5 @@ void ServiceTools_DrawFactory(void);
 void ServiceTools_DrawContrast(void);
 void ServiceTools_DrawLCDTest(void);
 void ServiceTools_DrawHMI(void);
+void ServiceTools_DrawVersion(void);
 #endif

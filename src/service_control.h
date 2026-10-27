@@ -15,7 +15,8 @@ enum
     SERVICE_FACTORY,
     SERVICE_CONTRAST,
     SERVICE_LCD_TEST,
-    SERVICE_HMI
+    SERVICE_HMI,
+    SERVICE_VERSION
 };
 void Service_Init(void);
 /* Открывает SERVICE только вне TX. Вызывается из основного цикла после сочетания. */

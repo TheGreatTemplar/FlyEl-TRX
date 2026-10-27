@@ -23,6 +23,7 @@
 #include "service_contrast.c"
 #include "service_lcd_test.c"
 #include "service_hmi.c"
+#include "fw_version.c"
 #include "service_control.c"
 #include "settings_control.c"
 #include "keyboard.c"
