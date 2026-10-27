@@ -1,13 +1,46 @@
 param([string]$Root = (Split-Path -Parent $PSScriptRoot))
 $ErrorActionPreference = 'Stop'
 
+function Resolve-FlyElGit {
+    if ($env:FLYEL_GIT) {
+        if (-not (Test-Path -LiteralPath $env:FLYEL_GIT -PathType Leaf)) {
+            throw "FLYEL_GIT points to a missing executable: $env:FLYEL_GIT"
+        }
+        return (Resolve-Path -LiteralPath $env:FLYEL_GIT).ProviderPath
+    }
+    $taskCommand = Get-Command git.exe -CommandType Application -ErrorAction SilentlyContinue
+    if ($taskCommand) { return $taskCommand.Source }
+    $taskCandidates = @()
+    foreach ($taskBase in @($env:ProgramFiles, ${env:ProgramFiles(x86)})) {
+        if ($taskBase) { $taskCandidates += Join-Path $taskBase 'Git/cmd/git.exe' }
+    }
+    if ($env:LOCALAPPDATA) { $taskCandidates += Join-Path $env:LOCALAPPDATA 'Programs/Git/cmd/git.exe' }
+    if ($env:USERPROFILE) {
+        $taskCandidates += Join-Path $env:USERPROFILE 'scoop/apps/git/current/cmd/git.exe'
+        $taskCandidates += Join-Path $env:USERPROFILE '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/cmd/git.exe'
+    }
+    foreach ($taskCandidate in $taskCandidates) {
+        if (Test-Path -LiteralPath $taskCandidate -PathType Leaf) { return $taskCandidate }
+    }
+    throw 'Git not found. Install Git for Windows or set FLYEL_GIT to the full path of git.exe, then rebuild.'
+}
+
 function Get-FlyElGitValue {
-    param([string]$Repository, [string[]]$Arguments, [string]$Fallback = 'UNKNOWN')
-    $taskGit = Get-Command git -ErrorAction SilentlyContinue
-    if (-not $taskGit) { return $Fallback }
-    try { $taskValue = & $taskGit.Source -C $Repository @Arguments 2>$null }
-    catch { return $Fallback }
-    if ($LASTEXITCODE -ne 0) { return $Fallback }
+    param([string]$Repository, [string[]]$Arguments, [string]$Fallback)
+    $taskGit = Resolve-FlyElGit
+    $taskPreference = $ErrorActionPreference
+    try {
+        # Windows PowerShell 5.1 wraps native stderr in ErrorRecord; check the process exit code explicitly.
+        $ErrorActionPreference = 'Continue'
+        $taskValue = & $taskGit -C $Repository @Arguments 2>&1
+        $taskSucceeded = $?
+        $taskExit = $LASTEXITCODE
+    }
+    finally { $ErrorActionPreference = $taskPreference }
+    if (-not $taskSucceeded -or $taskExit -ne 0) {
+        if ($PSBoundParameters.ContainsKey('Fallback')) { return $Fallback }
+        throw ("Git metadata failed ({0}): {1}" -f ($Arguments -join ' '), (@($taskValue) -join "`n"))
+    }
     return (@($taskValue) -join "`n").Trim()
 }
 
@@ -22,9 +55,9 @@ function ConvertTo-FlyElCString {
 function Get-FlyElSourceHash {
     param([string]$Repository)
     $taskPathsText = Get-FlyElGitValue $Repository @('-c','core.quotepath=false','ls-files','--cached','--others',
-        '--exclude-standard','--','src','font','scripts','firmware','gmg12864_v01.uvprojx') ''
+        '--exclude-standard','--','src','font','scripts','firmware','gmg12864_v01.uvprojx')
     [string[]]$taskPaths = @($taskPathsText -split "`n" | Where-Object { $_ -match '\.(c|h|ps1|py|sct|uvprojx)$' })
-    if ($taskPaths.Count -eq 0) { return 'UNKNOWN' }
+    if ($taskPaths.Count -eq 0) { throw 'No source files found for firmware fingerprint. Build from the Git checkout.' }
     [Array]::Sort($taskPaths, [StringComparer]::Ordinal)
     $taskStream = New-Object System.IO.MemoryStream
     $taskHash = [System.Security.Cryptography.SHA256]::Create()
@@ -46,21 +79,18 @@ function Get-FlyElSourceHash {
 function Update-FlyElBuildInfo {
     param([string]$Repository)
     $taskHash = Get-FlyElGitValue $Repository @('rev-parse','HEAD')
+    if ($taskHash -notmatch '^[0-9a-f]{40}$') { throw 'Missing or invalid Git revision; build metadata cannot be generated.' }
     $taskShort = Get-FlyElGitValue $Repository @('rev-parse','--short=10','HEAD')
     $taskBranch = Get-FlyElGitValue $Repository @('rev-parse','--abbrev-ref','HEAD')
     $taskTag = Get-FlyElGitValue $Repository @('describe','--tags','--exact-match','HEAD') 'NONE'
     $taskCount = Get-FlyElGitValue $Repository @('rev-list','--count','HEAD')
     $taskSubject = Get-FlyElGitValue $Repository @('show','-s','--format=%s','HEAD')
     $taskCommitDate = Get-FlyElGitValue $Repository @('show','-s','--format=%cI','HEAD')
-    $taskDate = 'UNKNOWN'
-    $taskTime = 'UNKNOWN'
-    if ($taskCommitDate -ne 'UNKNOWN') {
-        $taskCommitUTC = [DateTimeOffset]::Parse($taskCommitDate).UtcDateTime
-        $taskDate = $taskCommitUTC.ToString('yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture)
-        $taskTime = $taskCommitUTC.ToString('HH:mm:ss', [Globalization.CultureInfo]::InvariantCulture)
-    }
-    $taskStatus = Get-FlyElGitValue $Repository @('status','--porcelain','--untracked-files=normal') 'UNKNOWN'
-    $taskTree = if ($taskStatus -eq 'UNKNOWN') { 'UNKNOWN' } elseif ($taskStatus.Length -eq 0) { 'CLEAN' } else { 'MODIFIED' }
+    $taskCommitUTC = [DateTimeOffset]::Parse($taskCommitDate).UtcDateTime
+    $taskDate = $taskCommitUTC.ToString('yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture)
+    $taskTime = $taskCommitUTC.ToString('HH:mm:ss', [Globalization.CultureInfo]::InvariantCulture)
+    $taskStatus = Get-FlyElGitValue $Repository @('status','--porcelain','--untracked-files=normal')
+    $taskTree = if ($taskStatus.Length -eq 0) { 'CLEAN' } else { 'MODIFIED' }
     $taskNow = [DateTime]::UtcNow
     $taskFields = [ordered]@{
         FW_GIT_HASH = @($taskHash, 64); FW_GIT_SHORT = @($taskShort, 12)
