@@ -1,6 +1,7 @@
 /* Реальные драйвер/формат/автомат EEPROM, шина подменена моделью 32 КБ.
  * Сценарии выполняются машинным кодом Cortex-M3 в Unicorn. */
 #include "at24c256.c"
+#include "hmi_config.c"
 #include "memory_record.c"
 #include "memory_store.c"
 #include "uart_config.c"
@@ -28,6 +29,12 @@ static uint8_t write_bus_error;
 static uart_config_t uart_actual;
 static uint8_t memory_lcd_contrast = LCD_CONTRAST_DEFAULT;
 static uint32_t uart_apply_calls;
+void Input_Configure(const hmi_config_t *config)
+{
+    (void)config;
+}
+
+
 uint8_t LCD_GetContrast(void)
 {
     return memory_lcd_contrast;

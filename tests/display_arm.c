@@ -15,6 +15,7 @@ void LCD_TestUpdate(void);
 #include "ui_service_factory.c"
 #include "ui_service_contrast.c"
 #include "ui_lcd_test.c"
+#include "ui_service_hmi.c"
 #include "ui_service.c"
 #include "ui_settings.c"
 #include "ui_status.c"
@@ -22,7 +23,7 @@ void LCD_TestUpdate(void);
 #include "ui_boot.c"
 #undef LCD_Update
 
-uint8_t display_snapshots[22][1024];
+uint8_t display_snapshots[29][1024];
 uint32_t display_count;
 static const char *test_eeprom_message;
 
@@ -47,7 +48,7 @@ const char *EEPROM_TestStatus(void)
 
 void LCD_TestUpdate(void)
 {
-    if (display_count < 22U)
+    if (display_count < 29U)
         memcpy(display_snapshots[display_count++], lcd_buffer, 1024U);
 }
 
@@ -128,7 +129,7 @@ int test_display_snapshots(void)
     Service_HandleKey(Key_9_3);
     Service_Encoder(-1);
     Service_HandleKey(Key_9_2);
-    Service_Encoder(12);
+    Service_Encoder(9);
     Service_HandleKey(Key_9_2);
     Keyboard_Task(INPUT_KEY_COUNT);
     key_down[Key_10_3] = 1U;
@@ -161,6 +162,20 @@ int test_display_snapshots(void)
     ServiceContrast_Open();
     ServiceTools_DrawContrast();
     CHECK(display_count == 22U);
+    {
+        uint16_t hmi_id;
+        (void)Settings_OpenService();
+        Service_Encoder(13);
+        Service_HandleKey(Key_9_2);
+        for (hmi_id = 1406U; hmi_id <= 1412U; hmi_id++)
+        {
+            Service_Encoder((int32_t)(hmi_id - 1404U) - Service_Item());
+            Service_HandleKey(Key_9_2);
+            ServiceTools_DrawHMI();
+            Service_HandleKey(Key_5_1);
+        }
+    }
+    CHECK(display_count == 29U);
     return 0;
 }
 

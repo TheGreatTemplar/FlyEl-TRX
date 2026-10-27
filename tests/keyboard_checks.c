@@ -1,6 +1,12 @@
 #include "key_gesture.c"
 #include "key_layout.c"
 #include "radio_mode.c"
+uint32_t HMI_LongPressTicks(void)
+{
+    return 2000U;
+}
+
+
 #define CHECK(expr)                                                                                                    \
     do                                                                                                                 \
     {                                                                                                                  \

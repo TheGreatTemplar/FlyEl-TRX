@@ -2,6 +2,7 @@
 #include "at24c256.c"
 #include "memory_record.c"
 #include "uart_config.c"
+#include "hmi_config.c"
 #include "text_utils.c"
 #include "eeprom_startup.c"
 #include "boot_audit.c"
@@ -14,6 +15,12 @@
     } while (0)
 
 generator_menu_t menu;
+void Input_Configure(const hmi_config_t *config)
+{
+    (void)config;
+}
+
+
 static uint8_t boot_chip[32768];
 static uint32_t boot_tick;
 static uint32_t boot_reads;

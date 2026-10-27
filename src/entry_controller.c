@@ -1,3 +1,4 @@
+#include "hmi_config.h"
 /* F-INP: одна операция, подтверждение/отмена и тайм-аут без блокирующего ожидания. */
 #include "entry_controller.h"
 #include "app_state.h"
@@ -49,7 +50,7 @@ void Entry_Cancel(void)
 
 void Entry_Task(void)
 {
-    if (active != 0U && (uint32_t)(App_GetTick500us() - activity_tick) >= FUNC_TIMEOUT_TICKS)
+    if (active != 0U && (uint32_t)(App_GetTick500us() - activity_tick) >= HMI_FuncTicks())
         Entry_Cancel();
 }
 

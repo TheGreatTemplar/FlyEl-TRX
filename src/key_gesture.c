@@ -1,3 +1,4 @@
+#include "hmi_config.h"
 #include "key_gesture.h"
 
 /* База времени 500 мкс: начало повтора через 600 мс, период 200 мс. */
@@ -23,7 +24,7 @@ key_gesture_event_t KeyGesture_Update(key_gesture_t *state, uint8_t down, uint8_
     }
 
     /* Проверяем время и на отпускании: основной цикл мог пропустить порог. */
-    if (repeat == 0U && state->handled == 0U && (uint32_t)(now - state->press_tick) > 2000U)
+    if (repeat == 0U && state->handled == 0U && (uint32_t)(now - state->press_tick) > HMI_LongPressTicks())
     {
         state->handled = 1U;
         event = KEY_GESTURE_LONG;

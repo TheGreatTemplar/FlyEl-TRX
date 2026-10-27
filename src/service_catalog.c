@@ -15,12 +15,13 @@ const service_section_t service_sections[SERVICE_SECTION_COUNT] = {
     {"PWR / SWR", 111U, 14U, 11U},
     {"CW / KEYER", 125U, 10U, 12U},
     {"ATU", 135U, 11U, 13U},
-    {"HMI", 146U, 13U, 14U},
-    {"INTERFACES", 159U, 10U, 15U},
-    {"DIAGNOSTICS", 169U, 13U, 16U},
-    {"SERVICE DATA", 182U, 10U, 17U},
+    {"HMI", 146U, 10U, 14U},
+    {"INTERFACES", 156U, 10U, 15U},
+    {"DIAGNOSTICS", 166U, 13U, 16U},
+    {"SERVICE DATA", 179U, 10U, 17U},
 };
 
+// clang-format off
 const service_item_t service_items[SERVICE_ITEM_COUNT] = {
     {"HW VERSION", 101U, SERVICE_READ_ONLY, 0U},
     {"FW VERSION", 102U, SERVICE_READ_ONLY, 0U},
@@ -168,11 +169,8 @@ const service_item_t service_items[SERVICE_ITEM_COUNT] = {
     {"MEMORY CONFIG", 1309U, SERVICE_ENUM, 0U},
     {"RELAY TEST", 1310U, SERVICE_TEST, 0U},
     {"ATU STATUS", 1311U, SERVICE_MONITOR, 0U},
-    {"LCD TYPE", 1401U, SERVICE_ENUM, 0U},
     {"LCD CONTRAST", 1402U, SERVICE_VALUE, 0U},
-    {"LCD ORIENTATION", 1403U, SERVICE_ENUM, 0U},
     {"LCD TEST", 1404U, SERVICE_TEST, 0U},
-    {"KEY MAP", 1405U, SERVICE_TABLE, 0U},
     {"KEY DEBOUNCE", 1406U, SERVICE_VALUE, 0U},
     {"LONG PRESS", 1407U, SERVICE_VALUE, 0U},
     {"FUNC TIMEOUT", 1408U, SERVICE_VALUE, 0U},
@@ -215,6 +213,7 @@ const service_item_t service_items[SERVICE_ITEM_COUNT] = {
     {"RESET USER", 1709U, SERVICE_ACTION, 0U},
     {"REBOOT", 1710U, SERVICE_ACTION, 0U},
 };
+// clang-format on
 
 const char *ServiceCatalog_TypeName(uint8_t type)
 {

@@ -1,3 +1,4 @@
+#include "hmi_config.h"
 /* Диагностика всех 27 клавиш, включая TS и сочетания. Прерывания не меняются. */
 #include "service_keytest.h"
 #include "app_time.h"
@@ -107,7 +108,7 @@ uint8_t KeyTest_Poll(void)
         }
         else if (keytest_down[i] != 0U)
         {
-            if (elapsed > 2000U && keytest_long[i] == 0U)
+            if (elapsed > HMI_LongPressTicks() && keytest_long[i] == 0U)
             {
                 keytest_long[i] = 1U;
                 keytest_last = key;

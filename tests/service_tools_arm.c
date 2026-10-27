@@ -18,7 +18,7 @@ int test_lcd_test_navigation_timing_pause_resume_and_no_radio_changes(void)
     InitControls();
     saves = mock_uart_saves;
     contrast = LCD_GetContrast();
-    OpenServiceItem(13U, 3U);
+    OpenServiceItem(13U, 1U);
     CHECK(Service_Stage() == SERVICE_LCD_TEST && LCDTest_Page() == LCD_TEST_ON);
     now_tick += 1999U;
     CHECK(LCDTest_Task() == 0U && LCDTest_Page() == LCD_TEST_ON);
@@ -46,7 +46,7 @@ int test_lcd_test_navigation_timing_pause_resume_and_no_radio_changes(void)
     CHECK(menu.rf_hz == 28200000U && menu.step_index == 3U && RadioVfo_Mode() == RADIO_LSB);
     CHECK(mock_uart_saves == saves && store_calls == 0U && LCD_GetContrast() == contrast);
     Service_HandleKey(Key_9_3);
-    CHECK(Service_Stage() == SERVICE_SECTION && Service_Item() == 3U);
+    CHECK(Service_Stage() == SERVICE_SECTION && Service_Item() == 1U);
     now_tick += 10000U;
     CHECK(LCDTest_Task() == 0U);
     Service_HandleKey(Key_9_2);
@@ -61,7 +61,7 @@ int test_lcd_test_sweep_complete_endpoints_manual_animation_and_tick_wrap(void)
 {
     InitControls();
     now_tick = 0xFFFFFFF0U;
-    OpenServiceItem(13U, 3U);
+    OpenServiceItem(13U, 1U);
     Service_Encoder(LCD_TEST_SWEEP_X);
     CHECK(LCDTest_Position() == 0U && LCDTest_Auto() == 0U);
     now_tick += 39U;
@@ -125,7 +125,7 @@ int test_contrast_live_preview_limits_cancel_and_verified_save(void)
     uint32_t before;
     InitControls();
     before = mock_uart_saves;
-    OpenServiceItem(13U, 1U);
+    OpenServiceItem(13U, 0U);
     CHECK(Service_Stage() == SERVICE_CONTRAST && LCD_GetContrast() == 15U);
     Service_Encoder(5);
     CHECK(LCD_GetContrast() == 20U && mock_uart_saves == before);
@@ -202,7 +202,7 @@ int test_keyboard_diagnostic_all_27_keys_and_exit_without_commands(void)
 {
     uint8_t i;
     InitControls();
-    OpenServiceItem(13U, 12U);
+    OpenServiceItem(13U, 9U);
     CHECK(Service_Stage() == SERVICE_KEY_TEST);
     Keyboard_Task(INPUT_KEY_COUNT);
     CHECK(KeyTest_Ready() != 0U);
@@ -243,7 +243,7 @@ int test_keyboard_diagnostic_all_27_keys_and_exit_without_commands(void)
 int test_keyboard_diagnostic_exit_on_long_release_without_intermediate_poll(void)
 {
     InitControls();
-    OpenServiceItem(13U, 12U);
+    OpenServiceItem(13U, 9U);
     Keyboard_Task(INPUT_KEY_COUNT);
     key_down[Key_5_1] = 1U;
     Keyboard_Task(Key_5_1);

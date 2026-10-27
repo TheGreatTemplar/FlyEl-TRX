@@ -52,6 +52,7 @@ static uint32_t UartGet32(const uint8_t *data)
 
 static uint8_t UartDecode(const uint8_t *data, uart_config_t *config, uint32_t *generation)
 {
+    hmi_config_t hmi;
     uint16_t crc = AT24C256_Crc16Update(0xFFFFU, data, 62U);
     if (data[0] != 'F' || data[1] != 'U' || data[2] != '0' || data[3] != '1' || data[62] != (uint8_t)crc ||
         data[63] != (uint8_t)(crc >> 8U) || (data[15] != 0xFFU && data[15] > LCD_CONTRAST_MAX))
@@ -62,12 +63,15 @@ static uint8_t UartDecode(const uint8_t *data, uart_config_t *config, uint32_t *
     config->stop = data[14];
     config->reserved = 0U;
     *generation = UartGet32(&data[4]);
-    return UARTConfig_Valid(config);
+    return (uint8_t)(UARTConfig_Valid(config) != 0U && HMI_Decode(data, &hmi) != 0U);
 }
 
 
 void UARTStore_Init(void)
 {
+    hmi_config_t hmi;
+    HMI_Defaults(&hmi);
+    (void)HMI_Apply(&hmi);
     uart_saved_contrast = LCD_CONTRAST_DEFAULT;
     LCD_SetContrast(LCD_CONTRAST_DEFAULT);
     uart_apply_pending = 0U;
@@ -137,6 +141,7 @@ uint8_t UARTStore_Task(void)
         case UART_LOAD_A:
         case UART_LOAD_B:
         {
+            hmi_config_t hmi;
             uint8_t slot = (uint8_t)(uart_store_state == UART_LOAD_B);
             if (AT24C256_Read(uart_store_address, (uint16_t)((uint16_t)slot * 64U), data, sizeof(data)) != I2C2_SOFT_OK)
                 return UartStoreFail("EEPROM READ FAIL");
@@ -147,6 +152,8 @@ uint8_t UARTStore_Task(void)
                     return UartStoreFail("UART RESTORE FAIL");
                 uart_saved_contrast = (data[15] == 0xFFU) ? LCD_CONTRAST_DEFAULT : data[15];
                 LCD_SetContrast(uart_saved_contrast);
+                (void)HMI_Decode(data, &hmi);
+                (void)HMI_Apply(&hmi);
                 uart_generation = generation;
                 uart_store_slot = slot;
                 uart_store_valid = 1U;
@@ -186,6 +193,8 @@ uint8_t UARTStore_Task(void)
                 return UartStoreFail("EEPROM ACK TIMEOUT");
             break;
         case UART_VERIFY:
+        {
+            hmi_config_t hmi;
             if (AT24C256_Read(uart_store_address, (uint16_t)((uart_store_slot ^ 1U) * 64U), data, sizeof(data)) !=
                 I2C2_SOFT_OK)
                 return UartStoreFail("EEPROM READ FAIL");
@@ -195,11 +204,14 @@ uint8_t UARTStore_Task(void)
                 return UartStoreFail("EEPROM CRC FAIL");
             uart_generation = generation;
             uart_saved_contrast = data[15];
+            (void)HMI_Decode(data, &hmi);
+            (void)HMI_Apply(&hmi);
             uart_store_slot ^= 1U;
             uart_store_valid = 1U;
             uart_store_state = UART_IDLE;
             uart_store_message = "SAVED EEPROM";
             return 1U;
+        }
         default:
             break;
     }
@@ -207,7 +219,8 @@ uint8_t UARTStore_Task(void)
 }
 
 
-static uint8_t RequestSettings(const uart_config_t *config, uint8_t contrast, uint8_t apply_uart)
+static uint8_t RequestSettings(const uart_config_t *config, uint8_t contrast, uint8_t apply_uart,
+                               const hmi_config_t *hmi)
 {
     if (EEPROMFactory_Locked() != 0U)
     {
@@ -215,7 +228,7 @@ static uint8_t RequestSettings(const uart_config_t *config, uint8_t contrast, ui
         return 0U;
     }
     uint16_t crc;
-    if (UARTConfig_Valid(config) == 0U || contrast > LCD_CONTRAST_MAX)
+    if (UARTConfig_Valid(config) == 0U || contrast > LCD_CONTRAST_MAX || HMI_Valid(hmi) == 0U)
     {
         uart_store_message = "INVALID UART";
         return 0U;
@@ -249,6 +262,7 @@ static uint8_t RequestSettings(const uart_config_t *config, uint8_t contrast, ui
     uart_pending[13] = config->parity;
     uart_pending[14] = config->stop;
     uart_pending[15] = contrast;
+    HMI_Encode(uart_pending, hmi);
     crc = AT24C256_Crc16Update(0xFFFFU, uart_pending, 62U);
     uart_pending[62] = (uint8_t)crc;
     uart_pending[63] = (uint8_t)(crc >> 8U);
@@ -260,14 +274,20 @@ static uint8_t RequestSettings(const uart_config_t *config, uint8_t contrast, ui
 
 uint8_t UARTStore_Request(const uart_config_t *config)
 {
-    return RequestSettings(config, LCD_GetContrast(), 1U);
+    return RequestSettings(config, LCD_GetContrast(), 1U, HMI_Get());
 }
 
 
 uint8_t UARTStore_RequestContrast(uint8_t contrast)
 {
-    uint8_t accepted = RequestSettings(UART1_GetConfig(), contrast, 0U);
+    uint8_t accepted = RequestSettings(UART1_GetConfig(), contrast, 0U, HMI_Get());
     if (accepted != 0U)
         LCD_SetContrast(contrast);
     return accepted;
+}
+
+
+uint8_t UARTStore_RequestHMI(const hmi_config_t *config)
+{
+    return RequestSettings(UART1_GetConfig(), LCD_GetContrast(), 0U, config);
 }

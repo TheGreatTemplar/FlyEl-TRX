@@ -35,10 +35,6 @@ void ServiceValues_Read(uint16_t id, char *value, char *detail)
             Text_Append(value, " HZ");
             Text_Append(detail, "CURRENT IF");
             break;
-        case 1401U:
-            Text_Append(value, "GMG12864");
-            Text_Append(detail, "128X64");
-            break;
         case 1402U:
             Text_U32ToDec(value, LCD_GetContrast(), 1U);
             Text_Append(detail, "0..63 ENCODER");

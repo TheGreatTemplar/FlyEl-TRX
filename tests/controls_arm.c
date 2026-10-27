@@ -1,6 +1,7 @@
 /* Полные жесты физических кнопок исполняются на настоящем ARM-коде контроллеров.
  * GPIO и EEPROM подменены; протокол EEPROM проверяется отдельно в memory_arm.c. */
 #include <string.h>
+#include "hmi_config.c"
 #include "text_utils.c"
 #include "ts_button.c"
 #include "key_gesture.c"
@@ -21,6 +22,7 @@
 #include "service_factory.c"
 #include "service_contrast.c"
 #include "service_lcd_test.c"
+#include "service_hmi.c"
 #include "service_control.c"
 #include "settings_control.c"
 #include "keyboard.c"
@@ -35,6 +37,9 @@
 
 static void InitControls(void)
 {
+    hmi_config_t hmi;
+    HMI_Defaults(&hmi);
+    (void)HMI_Apply(&hmi);
     memset(&menu, 0, sizeof(menu));
     memset(key_down, 0, sizeof(key_down));
     mock_factory_state = EEPROM_FACTORY_IDLE;

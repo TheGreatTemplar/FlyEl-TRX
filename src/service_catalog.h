@@ -5,7 +5,7 @@
 enum
 {
     SERVICE_SECTION_COUNT = 17U,
-    SERVICE_ITEM_COUNT = 192U
+    SERVICE_ITEM_COUNT = 189U
 };
 enum
 {

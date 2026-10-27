@@ -844,6 +844,26 @@
               <FilePath>.\src\ui_lcd_test.c</FilePath>
             </File>
             <File>
+              <FileName>hmi_config.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\hmi_config.c</FilePath>
+            </File>
+            <File>
+              <FileName>input_encoder.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\input_encoder.c</FilePath>
+            </File>
+            <File>
+              <FileName>service_hmi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\service_hmi.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_service_hmi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\ui_service_hmi.c</FilePath>
+            </File>
+            <File>
               <FileName>uart_store.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\uart_store.c</FilePath>

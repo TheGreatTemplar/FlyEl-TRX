@@ -1,24 +1,22 @@
 #include "input.h"
 #include "stm32f10x.h"
 #include "board_pins.h"
+#include "input_encoder.h"
 
 /* CD4017: physical pins Q1..Q9 = 2,4,7,10,1,5,6,9,11.
  * Q0 is the idle state. A pressed OUT is low in Q0 and rises when
  * its selected counter output goes high. EXTI4 wakes the keyboard;
  * scan one position per timer tick only while active.
- * Encoder polling remains 2000 Hz, four transitions per detent.
+ * Encoder polling remains 2000 Hz; defaults are four transitions per detent.
  */
 #define ENC_A_GPIO GPIOB
 #define ENC_B_GPIO GPIOB
 #define ENC_A_PIN 13U
 #define ENC_B_PIN 14U
-#define ENCODER_COUNTS_PER_STEP 4
-#define KEY_DEBOUNCE_TICKS 20U
 #define KEY_EXTI_MASK (1UL << KEY_INT_PIN)
 
 void EXTI4_IRQHandler(void);
 
-static const int8_t encoder_transition_table[16] = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0};
 static const char *const physical_key_names[27] = {
     "Key_2_1",  "Key_2_2",  "Key_2_3",  "Key_4_1", "Key_4_2", "Key_4_3", "Key_7_1",  "Key_7_2",  "Key_7_3",
     "Key_10_1", "Key_10_2", "Key_10_3", "Key_1_1", "Key_1_2", "Key_1_3", "Key_5_1",  "Key_5_2",  "Key_5_3",
@@ -26,10 +24,9 @@ static const char *const physical_key_names[27] = {
 };
 
 static volatile int32_t encoder_steps;
-static volatile int32_t encoder_raw_counts;
 static volatile uint32_t key_raw_mask_debug;
-static uint8_t encoder_last_state;
-static int8_t encoder_accum;
+static encoder_decoder_t encoder_decoder;
+static hmi_config_t input_config;
 static volatile uint8_t key_state[INPUT_KEY_COUNT];
 static volatile uint8_t key_pressed_events[INPUT_KEY_COUNT];
 static uint8_t key_last_raw[INPUT_KEY_COUNT];
@@ -208,7 +205,7 @@ void EXTI4_IRQHandler(void)
 }
 
 
-/* Подтверждает изменение после стабильных 10 мс; события возникают только на нажатие. */
+/* Подтверждает изменение после настраиваемого интервала; события возникают только на нажатие. */
 static void Keyboard_Debounce(uint32_t raw_mask)
 {
     uint8_t i;
@@ -225,7 +222,8 @@ static void Keyboard_Debounce(uint32_t raw_mask)
             key_last_raw[i] = raw;
             key_change_tick[i] = input_ticks;
         }
-        else if (key_state[i] != raw && (uint32_t)(input_ticks - key_change_tick[i]) >= KEY_DEBOUNCE_TICKS)
+        else if (key_state[i] != raw &&
+                 (uint32_t)(input_ticks - key_change_tick[i]) >= ((uint32_t)input_config.debounce_ms * 2U))
         {
             key_state[i] = raw;
             if (raw != 0U && key_pressed_events[i] < 255U)
@@ -253,7 +251,7 @@ static void Keyboard_Poll500us(void)
                 release_pending = 1U;
                 release_tick = input_ticks;
             }
-            else if ((uint32_t)(input_ticks - release_tick) >= KEY_DEBOUNCE_TICKS)
+            else if ((uint32_t)(input_ticks - release_tick) >= ((uint32_t)input_config.debounce_ms * 2U))
             {
                 release_pending = 0U;
                 Keyboard_ArmInterrupt();
@@ -330,49 +328,30 @@ void Input_Init(void)
         key_pressed_events[i] = 0U;
     }
     key_raw_mask_debug = 0U;
-    encoder_last_state = Encoder_ReadAB();
-    encoder_accum = 0;
+    HMI_Defaults(&input_config);
+    Encoder_Reset(&encoder_decoder, Encoder_ReadAB(), input_ticks);
     encoder_steps = 0;
-    encoder_raw_counts = 0;
     NVIC_EnableIRQ(EXTI4_IRQn);
     Keyboard_ArmInterrupt();
+}
+
+
+/* Короткая атомарная смена параметров; сканер клавиатуры и EXTI не останавливаются. */
+void Input_Configure(const hmi_config_t *config)
+{
+    uint32_t primask = Input_CriticalEnter();
+    input_config = *config;
+    Encoder_Reset(&encoder_decoder, Encoder_ReadAB(), input_ticks);
+    encoder_steps = 0;
+    Input_CriticalExit(primask);
 }
 
 
 /* Вызывается из TIM2 каждые 500 мкс: энкодер всегда, клавиатура только после INT. */
 void Input_Poll500us(void)
 {
-    uint8_t new_state;
-    uint8_t index;
-    int8_t delta;
     input_ticks++;
-    new_state = Encoder_ReadAB();
-
-    if (new_state != encoder_last_state)
-    {
-        index = (uint8_t)((encoder_last_state << 2U) | new_state);
-        delta = encoder_transition_table[index];
-
-        if (delta != 0)
-        {
-            encoder_raw_counts += delta;
-            encoder_accum += delta;
-
-            while (encoder_accum >= ENCODER_COUNTS_PER_STEP)
-            {
-                encoder_accum -= ENCODER_COUNTS_PER_STEP;
-                encoder_steps++;
-            }
-
-            while (encoder_accum <= -ENCODER_COUNTS_PER_STEP)
-            {
-                encoder_accum += ENCODER_COUNTS_PER_STEP;
-                encoder_steps--;
-            }
-        }
-
-        encoder_last_state = new_state;
-    }
+    encoder_steps += Encoder_Update(&encoder_decoder, Encoder_ReadAB(), input_ticks, &input_config);
 
     /* Idle keyboard cost: one flag check, with no GPIO reads or scanning. */
     if (keyboard_active != 0U)
@@ -382,7 +361,7 @@ void Input_Poll500us(void)
 }
 
 
-/* Атомарно забирает накопленные щелчки; число переходов задаёт ENCODER_COUNTS_PER_STEP. */
+/* Атомарно забирает накопленные щелчки; с учётом настроек HMI. */
 int32_t Input_GetEncoderSteps(void)
 {
     uint32_t primask;

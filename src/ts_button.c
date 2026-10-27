@@ -1,3 +1,4 @@
+#include "hmi_config.h"
 #include "ts_button.h"
 
 /* Сбрасывает автомат TS и запоминает исходный шаг для возврата из 10 кГц. */
@@ -12,7 +13,7 @@ void TS_Button_Init(ts_button_t *button, uint32_t step_hz)
 }
 
 
-/* Различает короткое нажатие и удержание >1 с; одно удержание выполняет одно действие. */
+/* Порог HMI LONG PRESS (по умолчанию >1 с); одно удержание выполняет одно действие. */
 uint32_t TS_Button_Update(ts_button_t *button, uint8_t down, uint8_t pressed, uint32_t now, uint32_t step_hz)
 {
     if (button->active == 0U)
@@ -33,7 +34,7 @@ uint32_t TS_Button_Update(ts_button_t *button, uint8_t down, uint8_t pressed, ui
 
     /* Check duration on release too: the main loop may not have run
      * between crossing the threshold and observing the released key. */
-    if (button->handled == 0U && (uint32_t)(now - button->press_tick) > 2000U)
+    if (button->handled == 0U && (uint32_t)(now - button->press_tick) > HMI_LongPressTicks())
     {
         button->restore_step_hz = step_hz;
         step_hz = 10000U;

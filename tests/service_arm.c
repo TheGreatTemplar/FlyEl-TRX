@@ -161,7 +161,7 @@ int test_service_rejects_chord_during_tx_and_preserves_func(void)
 }
 
 
-int test_service_catalog_and_navigation_visit_all_192_items_without_rf_changes(void)
+int test_service_catalog_and_navigation_visit_all_189_items_without_rf_changes(void)
 {
     uint8_t section, item;
     uint16_t visited = 0U;
@@ -178,9 +178,23 @@ int test_service_catalog_and_navigation_visit_all_192_items_without_rf_changes(v
             const service_item_t *current;
             Settings_Encoder((int32_t)item - Service_Item());
             current = Service_Current();
-            CHECK(current->id == ((uint16_t)section + 1U) * 100U + item + 1U);
+            if (section == 13U)
+            {
+                static const uint16_t hmi_ids[] = {1402U, 1404U, 1406U, 1407U, 1408U,
+                                                   1409U, 1410U, 1411U, 1412U, 1413U};
+                CHECK(current->id == hmi_ids[item]);
+            }
+            else
+                CHECK(current->id == ((uint16_t)section + 1U) * 100U + item + 1U);
             CHECK(current->label[0] != '\0' && current->type <= SERVICE_BOOL);
             Service_HandleKey(Key_5_3);
+            if (current->id >= 1406U && current->id <= 1412U)
+            {
+                CHECK(Service_Stage() == SERVICE_HMI);
+                Service_HandleKey(Key_5_1);
+                visited++;
+                continue;
+            }
             if (current->id == 1404U)
             {
                 CHECK(Service_Stage() == SERVICE_LCD_TEST && LCDTest_Auto() != 0U);

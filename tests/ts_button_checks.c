@@ -1,5 +1,11 @@
 /* Compile with the actual implementation and inspect optimized return values. */
 #include "ts_button.c"
+uint32_t HMI_LongPressTicks(void)
+{
+    return 2000U;
+}
+
+
 #define CHECK(expr)                                                                                                    \
     do                                                                                                                 \
     {                                                                                                                  \

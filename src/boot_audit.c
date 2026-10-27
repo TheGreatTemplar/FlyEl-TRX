@@ -3,6 +3,7 @@
 #include "memory_record.h"
 #include "app_config.h"
 #include "uart_config.h"
+#include "hmi_config.h"
 #include "gmg12864.h"
 #include "at24c256.h"
 #include "text_utils.h"
@@ -38,6 +39,7 @@ static uint8_t Inspect(const uint8_t *data, uint8_t channel, uint8_t uart, uint3
     uint16_t crc;
     radio_preset_t preset;
     uart_config_t config;
+    hmi_config_t hmi;
     if (data == 0)
         return AUDIT_READ;
     for (i = 0U; i < 64U && data[i] == 0xFFU; i++)
@@ -62,7 +64,7 @@ static uint8_t Inspect(const uint8_t *data, uint8_t channel, uint8_t uart, uint3
     config.parity = data[13];
     config.stop = data[14];
     config.reserved = 0U;
-    return (UARTConfig_Valid(&config) != 0U) ? AUDIT_USED : AUDIT_FORMAT;
+    return (UARTConfig_Valid(&config) != 0U && HMI_Decode(data, &hmi) != 0U) ? AUDIT_USED : AUDIT_FORMAT;
 }
 
 

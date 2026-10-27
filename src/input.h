@@ -2,6 +2,7 @@
 #define INPUT_H
 
 #include <stdint.h>
+#include "hmi_config.h"
 
 typedef enum
 {
@@ -58,6 +59,8 @@ typedef enum
 } input_key_t;
 
 void Input_Init(void);
+/* Применение HMI в основном контексте, сброс частичного шага и накопленных событий энкодера. */
+void Input_Configure(const hmi_config_t *config);
 void Input_Poll500us(void);
 
 int32_t Input_GetEncoderSteps(void);

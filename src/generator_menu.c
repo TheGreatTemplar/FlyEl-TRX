@@ -21,6 +21,7 @@
 #include "eeprom_factory.h"
 #include "service_contrast.h"
 #include "service_lcd_test.h"
+#include "service_hmi.h"
 
 generator_menu_t menu;
 
@@ -133,6 +134,8 @@ void GeneratorMenu_Task(void)
     if (UARTStore_Task() != 0U)
         menu.need_redraw = 1U;
     if (ServiceContrast_Task() != 0U)
+        menu.need_redraw = 1U;
+    if (ServiceHMI_Task() != 0U)
         menu.need_redraw = 1U;
     MemoryControl_Task();
     UpdateAdc();

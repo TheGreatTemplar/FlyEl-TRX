@@ -12,6 +12,21 @@ static uint32_t mock_uart_saves;
 static uint8_t mock_factory_state;
 static uint32_t mock_factory_starts;
 static uint32_t mock_reboots;
+void Input_Configure(const hmi_config_t *config)
+{
+    (void)config;
+}
+
+
+uint8_t UARTStore_RequestHMI(const hmi_config_t *config)
+{
+    if (HMI_Apply(config) == 0U)
+        return 0U;
+    mock_uart_saves++;
+    return 1U;
+}
+
+
 #ifndef CONTROL_REAL_LCD
 static uint8_t mock_lcd_contrast = LCD_CONTRAST_DEFAULT;
 uint8_t LCD_GetContrast(void)
