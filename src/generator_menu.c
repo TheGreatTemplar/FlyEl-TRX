@@ -20,6 +20,7 @@
 #include "uart_store.h"
 #include "eeprom_factory.h"
 #include "service_contrast.h"
+#include "service_lcd_test.h"
 
 generator_menu_t menu;
 
@@ -123,6 +124,8 @@ void GeneratorMenu_Task(void)
 {
     int32_t steps;
     input_key_t key;
+    if (LCDTest_Task() != 0U)
+        menu.need_redraw = 1U;
     if (EEPROMFactory_Task() != 0U)
         menu.need_redraw = 1U;
     if (EEPROM_TestTask() != 0U)

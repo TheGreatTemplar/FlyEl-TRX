@@ -14,6 +14,7 @@ void LCD_TestUpdate(void);
 #include "ui_service_tools.c"
 #include "ui_service_factory.c"
 #include "ui_service_contrast.c"
+#include "ui_lcd_test.c"
 #include "ui_service.c"
 #include "ui_settings.c"
 #include "ui_status.c"

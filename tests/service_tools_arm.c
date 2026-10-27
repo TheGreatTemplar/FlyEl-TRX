@@ -10,6 +10,82 @@ static void OpenServiceItem(uint8_t section, uint8_t item)
 }
 
 
+int test_lcd_test_navigation_timing_pause_resume_and_no_radio_changes(void)
+{
+    uint8_t page;
+    uint32_t saves;
+    uint8_t contrast;
+    InitControls();
+    saves = mock_uart_saves;
+    contrast = LCD_GetContrast();
+    OpenServiceItem(13U, 3U);
+    CHECK(Service_Stage() == SERVICE_LCD_TEST && LCDTest_Page() == LCD_TEST_ON);
+    now_tick += 1999U;
+    CHECK(LCDTest_Task() == 0U && LCDTest_Page() == LCD_TEST_ON);
+    now_tick++;
+    CHECK(LCDTest_Task() != 0U && LCDTest_Page() == LCD_TEST_OFF);
+    for (page = LCD_TEST_CHECK; page < LCD_TEST_COUNT; page++)
+    {
+        now_tick += (LCDTest_Page() == LCD_TEST_SWEEP_X) ? 5120U : (LCDTest_Page() == LCD_TEST_SWEEP_Y) ? 2560U : 2000U;
+        CHECK(LCDTest_Task() != 0U && LCDTest_Page() == page);
+    }
+    now_tick += 2000U;
+    CHECK(LCDTest_Task() != 0U && LCDTest_Page() == LCD_TEST_ON);
+    Service_Encoder(-1);
+    CHECK(LCDTest_Page() == LCD_TEST_FONT_OTHER && LCDTest_Auto() == 0U);
+    now_tick += 100000U;
+    CHECK(LCDTest_Task() == 0U && LCDTest_Page() == LCD_TEST_FONT_OTHER);
+    Service_Encoder(2147483647);
+    CHECK(LCDTest_Page() < LCD_TEST_COUNT);
+    Service_Encoder(-2147483647 - 1);
+    CHECK(LCDTest_Page() < LCD_TEST_COUNT);
+    Service_HandleKey(Key_5_3);
+    CHECK(LCDTest_Auto() != 0U);
+    Tap(Key_10_1, 2001U);
+    Tap(Key_10_3, 2001U);
+    CHECK(menu.rf_hz == 28200000U && menu.step_index == 3U && RadioVfo_Mode() == RADIO_LSB);
+    CHECK(mock_uart_saves == saves && store_calls == 0U && LCD_GetContrast() == contrast);
+    Service_HandleKey(Key_9_3);
+    CHECK(Service_Stage() == SERVICE_SECTION && Service_Item() == 3U);
+    now_tick += 10000U;
+    CHECK(LCDTest_Task() == 0U);
+    Service_HandleKey(Key_9_2);
+    CHECK(LCDTest_Page() == LCD_TEST_ON && LCDTest_Auto() != 0U);
+    Service_HandleKey(Key_5_1);
+    CHECK(Service_Stage() == SERVICE_SECTION);
+    return 0;
+}
+
+
+int test_lcd_test_sweep_complete_endpoints_manual_animation_and_tick_wrap(void)
+{
+    InitControls();
+    now_tick = 0xFFFFFFF0U;
+    OpenServiceItem(13U, 3U);
+    Service_Encoder(LCD_TEST_SWEEP_X);
+    CHECK(LCDTest_Position() == 0U && LCDTest_Auto() == 0U);
+    now_tick += 39U;
+    CHECK(LCDTest_Task() == 0U);
+    now_tick++;
+    CHECK(LCDTest_Task() != 0U && LCDTest_Position() == 1U);
+    now_tick += 126U * 40U;
+    CHECK(LCDTest_Task() != 0U && LCDTest_Position() == 127U);
+    now_tick += 40U;
+    CHECK(LCDTest_Task() != 0U && LCDTest_Position() == 0U && LCDTest_Page() == LCD_TEST_SWEEP_X);
+    Service_HandleKey(Key_9_2);
+    now_tick += 127U * 40U;
+    CHECK(LCDTest_Task() != 0U && LCDTest_Position() == 127U);
+    now_tick += 40U;
+    CHECK(LCDTest_Task() != 0U && LCDTest_Page() == LCD_TEST_SWEEP_Y && LCDTest_Position() == 0U);
+    now_tick += 63U * 40U;
+    CHECK(LCDTest_Task() != 0U && LCDTest_Position() == 63U);
+    now_tick += 40U;
+    CHECK(LCDTest_Task() != 0U && LCDTest_Page() == LCD_TEST_FONT_MAIN);
+    Service_HandleKey(Key_5_1);
+    return 0;
+}
+
+
 int test_factory_menu_confirmation_cancel_tx_and_restart(void)
 {
     InitControls();

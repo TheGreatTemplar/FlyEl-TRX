@@ -20,6 +20,7 @@
 #include "service_keytest.c"
 #include "service_factory.c"
 #include "service_contrast.c"
+#include "service_lcd_test.c"
 #include "service_control.c"
 #include "settings_control.c"
 #include "keyboard.c"

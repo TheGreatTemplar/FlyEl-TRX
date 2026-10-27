@@ -4,4 +4,5 @@ void ServiceTools_DrawUart(void);
 void ServiceTools_DrawKeyboard(void);
 void ServiceTools_DrawFactory(void);
 void ServiceTools_DrawContrast(void);
+void ServiceTools_DrawLCDTest(void);
 #endif
