@@ -1,4 +1,4 @@
-/* Квадратура RIT/SHIFT на общем PA15: Q1/Q2 и Q3/Q4 CD4017. */
+/* Квадратура на общем PA15: SHIFT — Q1/Q2, RIT — Q3/Q4 CD4017. */
 #include "input_aux.h"
 #include "input_encoder.h"
 
@@ -13,8 +13,10 @@ void AuxEncoder_Reset(void)
     uint8_t i;
     HMI_Defaults(&aux_config);
     /* Отдельный профиль: настройки основного энкодера не влияют на RIT/SHIFT.
-     * Полный цикл из четырёх переходов даёт один шаг, неверный переход сбрасывает остаток. */
-    aux_config.encoder_type = 1U;
+     * Щелчки чередуют 00 и 11: два перехода дают шаг на каждом из этих состояний.
+     * Неверный переход сбрасывает остаток. */
+    aux_config.encoder_type = 3U;
+    aux_config.encoder_steps = 2U;
     for (i = 0U; i < INPUT_AUX_COUNT; i++)
     {
         aux_steps[i] = 0;
@@ -33,7 +35,7 @@ void AuxEncoder_Sample(uint8_t position, uint8_t level, uint32_t now)
     {
         return;
     }
-    index = (uint8_t)((position - 1U) / 2U);
+    index = (uint8_t)(position <= 2U ? INPUT_AUX_SHIFT : INPUT_AUX_RIT);
     if ((position & 1U) != 0U)
     {
         aux_a[index] = (uint8_t)(level & 1U);

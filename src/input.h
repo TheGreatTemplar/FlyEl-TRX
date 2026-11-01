@@ -71,7 +71,7 @@ void Input_Configure(const hmi_config_t *config);
 void Input_Poll500us(void);
 
 int32_t Input_GetEncoderSteps(void);
-/* Забирает шаги RIT/SHIFT в основном цикле; четыре перехода на полный щелчок. */
+/* Забирает шаги RIT/SHIFT в основном цикле; два перехода на щелчок (00/11). */
 int32_t Input_GetAuxEncoderSteps(input_aux_encoder_t encoder);
 
 uint8_t Input_KeyPressed(input_key_t key);

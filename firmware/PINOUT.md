@@ -8,7 +8,7 @@
 | LCD, SPI1 | PA5 SCK, PA7 MOSI; PB10 CS, PB11 RESET, PB12 DC |
 | Энкодер | PB13 A, PB14 B; четыре перехода на щелчок |
 | CD4017 | PA11 CLK, PA3 RESET; PA4 INT подключён, EXTI4 отключён |
-| RIT и SHIFT | Общий PA15, внешняя подтяжка 27 кОм к земле; RIT — Q1/Q2 (2/4), SHIFT — Q3/Q4 (7/10) |
+| RIT и SHIFT | Общий PA15, внешняя подтяжка 27 кОм к земле; SHIFT — Q1/Q2 (2/4), RIT — Q3/Q4 (7/10) |
 | Клавиатура | PB3 OUT1, PB4 OUT2, PB5 OUT3 |
 | I2C1, Si5351 | PB6 SCL, PB7 SDA |
 | I2C2, AT24C256C | PB8 SCL, PB9 SDA |

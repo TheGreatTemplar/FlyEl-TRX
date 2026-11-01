@@ -45,7 +45,7 @@ static void PollAB(uint8_t ab)
 
 
 /* Модель диодной матрицы: на входах уровни выбранного Q до очередного тика. */
-static void ScanFrame(uint8_t rit, uint8_t shift, uint32_t keys)
+static void ScanFrame(uint8_t q12_ab, uint8_t q34_ab, uint32_t keys)
 {
     uint8_t i;
     uint8_t columns = (uint8_t)((keys | (keys >> 3U) | (keys >> 6U) | (keys >> 9U) | (keys >> 12U) | (keys >> 15U) |
@@ -58,13 +58,13 @@ static void ScanFrame(uint8_t rit, uint8_t shift, uint32_t keys)
         if (scan_position != 0U)
             outs |= (uint8_t)((keys >> ((scan_position - 1U) * 3U)) & 7U);
         if (scan_position == 1U)
-            level = (uint8_t)(rit >> 1U);
+            level = (uint8_t)(q12_ab >> 1U);
         else if (scan_position == 2U)
-            level = (uint8_t)(rit & 1U);
+            level = (uint8_t)(q12_ab & 1U);
         else if (scan_position == 3U)
-            level = (uint8_t)(shift >> 1U);
+            level = (uint8_t)(q34_ab >> 1U);
         else if (scan_position == 4U)
-            level = (uint8_t)(shift & 1U);
+            level = (uint8_t)(q34_ab & 1U);
         hmi_gpio_b.IDR = (hmi_gpio_b.IDR & ~(7UL << 3U)) | ((uint32_t)outs << 3U);
         hmi_gpio_a.IDR = (uint32_t)level << 15U;
         Input_Poll500us();
@@ -81,8 +81,8 @@ int test_continuous_scan_reads_both_encoders_without_key_interrupt(void)
     ScanFrame(0U, 0U, 0U);
     for (i = 0U; i < 4U; i++)
         ScanFrame(forward[i], reverse[i], 0U);
-    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == 1);
-    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == -1);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == -2);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == 2);
     CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == 0);
     CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_COUNT) == 0);
     CHECK(Input_GetRawKeyMask() == 0U && Input_GetEncoderSteps() == 0);
@@ -91,8 +91,8 @@ int test_continuous_scan_reads_both_encoders_without_key_interrupt(void)
     CHECK(scan_position == 0U && input_ticks == 1050U);
     for (i = 0U; i < 4U; i++)
         ScanFrame(reverse[i], forward[i], 0U);
-    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == -1);
-    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == 1);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == 2);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == -2);
     return 0;
 }
 
@@ -110,7 +110,7 @@ int test_aux_scan_preserves_keyboard_main_encoder_and_rejects_bounce(void)
     Input_Configure(&config);
     for (i = 0U; i < 8U; i++)
         ScanFrame(bounce[i], 0U, 1UL << 11U);
-    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == 1);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == 2);
     CHECK(Input_KeyIsDown(Key_10_3) != 0U);
     CHECK(Input_KeyPressed(Key_10_3) == 1U && Input_KeyPressed(Key_10_3) == 0U);
     PollAB(2U);
@@ -226,5 +226,35 @@ int test_hmi_detent_profiles_filter_and_fast_rotation(void)
     CHECK(Encoder_Update(&state, 1U, 4U, &config) == 0);
     CHECK(Encoder_Update(&state, 0U, 5U, &config) == 0);
     CHECK(Encoder_Update(&state, 0U, 7U, &config) == 1);
+    return 0;
+}
+
+
+/* Каждый полупериод — отдельный щелчок, без двойной выдачи при следующем опросе. */
+int test_aux_each_detent_counts_once_on_00_and_11_with_swapped_roles(void)
+{
+    InputFixture();
+    ScanFrame(0U, 0U, 0U);
+    ScanFrame(2U, 1U, 0U);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == 0);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == 0);
+    ScanFrame(3U, 3U, 0U);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == 1);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == -1);
+    ScanFrame(3U, 3U, 0U);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == 0);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == 0);
+    ScanFrame(1U, 2U, 0U);
+    ScanFrame(0U, 0U, 0U);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == 1);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == -1);
+    ScanFrame(1U, 2U, 0U);
+    ScanFrame(3U, 3U, 0U);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == -1);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == 1);
+    ScanFrame(2U, 1U, 0U);
+    ScanFrame(0U, 0U, 0U);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == -1);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == 1);
     return 0;
 }
