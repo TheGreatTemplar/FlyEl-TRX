@@ -164,7 +164,7 @@ static void DrawMainScreen(void)
     }
 
     StatusUI_Draw();
-    if (header_fits == 0U && *key_name != '\0')
+    if (header_fits == 0U && *key_name != '\0' && StatusUI_AuxMessage()[0] == '\0')
     {
         /* Диагностика не исчезает при длинном имени режима RTTY-R. */
         /* Правую ячейку постоянного номера канала не затрагиваем диагностикой. */

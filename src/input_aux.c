@@ -49,7 +49,11 @@ void AuxEncoder_Sample(uint8_t position, uint8_t level, uint32_t now)
         aux_ready[index] = 1U;
         return;
     }
-    aux_steps[index] += Encoder_Update(&aux_decoders[index], ab, now, &aux_config);
+    {
+        int16_t steps = Encoder_Update(&aux_decoders[index], ab, now, &aux_config);
+        /* SHIFT установлен зеркально относительно RIT. */
+        aux_steps[index] += index == INPUT_AUX_SHIFT ? -steps : steps;
+    }
 }
 
 

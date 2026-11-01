@@ -594,25 +594,55 @@ int test_aux_diagnostic_counts_timeout_priorities_and_tick_wrap(void)
     memset(aux_positions, 0, sizeof(aux_positions));
     now_tick = 0xFFFFFF00U;
     StatusUI_AuxEncoder(INPUT_AUX_RIT, 1);
-    CHECK(strcmp(StatusUI_Header(), "RIT +1") == 0 && menu.rf_hz == rf);
+    CHECK(strcmp(StatusUI_AuxMessage(), "RIT +1") == 0 && menu.rf_hz == rf);
     StatusUI_AuxEncoder(INPUT_AUX_RIT, 1);
-    CHECK(strcmp(StatusUI_Header(), "RIT +2") == 0);
+    CHECK(strcmp(StatusUI_AuxMessage(), "RIT +2") == 0);
     StatusUI_AuxEncoder(INPUT_AUX_SHIFT, -1);
-    CHECK(strcmp(StatusUI_Header(), "SHIFT -1") == 0);
+    CHECK(strcmp(StatusUI_AuxMessage(), "SHIFT -1") == 0);
     now_tick += 3999U;
-    CHECK(strcmp(StatusUI_Header(), "SHIFT -1") == 0);
+    CHECK(strcmp(StatusUI_AuxMessage(), "SHIFT -1") == 0);
     test_eeprom_message = "EEPROM ERROR";
     CHECK(strcmp(StatusUI_Header(), "EEPROM ERROR") == 0);
     test_eeprom_message = "";
     now_tick++;
-    CHECK(strcmp(StatusUI_Header(), "SHIFT -1") != 0);
+    CHECK(strcmp(StatusUI_AuxMessage(), "SHIFT -1") != 0);
     StatusUI_AuxEncoder(INPUT_AUX_SHIFT, 2147483647);
-    CHECK(strcmp(StatusUI_Header(), "SHIFT +9998") == 0);
+    CHECK(strcmp(StatusUI_AuxMessage(), "SHIFT +9998") == 0);
     StatusUI_AuxEncoder(INPUT_AUX_SHIFT, 2147483647);
-    CHECK(strcmp(StatusUI_Header(), "SHIFT +9999") == 0);
+    CHECK(strcmp(StatusUI_AuxMessage(), "SHIFT +9999") == 0);
     StatusUI_AuxEncoder(INPUT_AUX_COUNT, 1);
-    CHECK(strcmp(StatusUI_Header(), "SHIFT +9999") == 0 && menu.rf_hz == rf);
+    CHECK(strcmp(StatusUI_AuxMessage(), "SHIFT +9999") == 0 && menu.rf_hz == rf);
     CHECK(LCD_GetText5x7Width(aux_message, 1U) < 110U);
+    now_tick += 4000U;
+    return 0;
+}
+
+
+int test_aux_label_stays_on_fixed_lower_row_when_number_grows(void)
+{
+    uint8_t x;
+    uint8_t y;
+    uint8_t top[128];
+    uint8_t prefix[27 * 7];
+    InitControls();
+    test_eeprom_message = "";
+    memset(aux_positions, 0, sizeof(aux_positions));
+    Screens_Redraw();
+    memcpy(top, lcd_buffer, sizeof(top));
+    StatusUI_AuxEncoder(INPUT_AUX_SHIFT, 9);
+    Screens_Redraw();
+    CHECK(memcmp(top, lcd_buffer, sizeof(top)) == 0);
+    for (y = 0U; y < 7U; y++)
+        for (x = 0U; x < 27U; x++)
+            prefix[(uint16_t)y * 27U + x] = Pixel((uint8_t)(36U + x), (uint8_t)(44U + y));
+    StatusUI_AuxEncoder(INPUT_AUX_SHIFT, 1);
+    Screens_Redraw();
+    CHECK(strcmp(StatusUI_AuxMessage(), "SHIFT +10") == 0);
+    CHECK(memcmp(top, lcd_buffer, sizeof(top)) == 0);
+    for (y = 0U; y < 7U; y++)
+        for (x = 0U; x < 27U; x++)
+            CHECK(prefix[(uint16_t)y * 27U + x] == Pixel((uint8_t)(36U + x), (uint8_t)(44U + y)));
+    CHECK(LCD_GetText5x7Width("SHIFT -9999", 1U) < UI_CHANNEL_X - 36U);
     now_tick += 4000U;
     return 0;
 }

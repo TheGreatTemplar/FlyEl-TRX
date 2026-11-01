@@ -47,6 +47,17 @@ void StatusUI_AuxEncoder(input_aux_encoder_t encoder, int32_t steps)
 }
 
 
+const char *StatusUI_AuxMessage(void)
+{
+    if (EEPROM_TestStatus()[0] != '\0' || Entry_Active() != 0U || MemoryStore_Status()[0] != '\0' ||
+        Scan_Active() != 0U)
+        return "";
+    if (aux_message[0] != '\0' && (uint32_t)(App_GetTick500us() - aux_message_tick) < 4000U)
+        return aux_message;
+    return "";
+}
+
+
 const char *StatusUI_Header(void)
 {
     if (EEPROM_TestStatus()[0] != '\0')
@@ -57,8 +68,6 @@ const char *StatusUI_Header(void)
         return MemoryStore_Status();
     if (Scan_Active() != 0U)
         return "SCAN";
-    if (aux_message[0] != '\0' && (uint32_t)(App_GetTick500us() - aux_message_tick) < 4000U)
-        return aux_message;
     return KeyLayout_Name(menu.last_key);
 }
 
@@ -81,6 +90,13 @@ void StatusUI_Draw(void)
         /* FUNC уже виден сверху, здесь нужна только ошибка ввода. */
         if (Entry_Status()[0] == 'I')
             LCD_Print5x7(36U, 44U, Entry_Status(), 1U, CH_UNINVERT);
+        return;
+    }
+    if (StatusUI_AuxMessage()[0] != '\0')
+    {
+        /* Единое место вместо переноса между верхней строкой и нижним полем.
+         * Номер канала справа уже нарисован и не затрагивается. */
+        LCD_Print5x7(36U, 44U, StatusUI_AuxMessage(), 1U, CH_UNINVERT);
         return;
     }
     if (show_channel != 0U)

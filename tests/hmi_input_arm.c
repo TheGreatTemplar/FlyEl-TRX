@@ -82,7 +82,7 @@ int test_continuous_scan_reads_both_encoders_without_key_interrupt(void)
     for (i = 0U; i < 4U; i++)
         ScanFrame(forward[i], reverse[i], 0U);
     CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == -2);
-    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == 2);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == -2);
     CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == 0);
     CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_COUNT) == 0);
     CHECK(Input_GetRawKeyMask() == 0U && Input_GetEncoderSteps() == 0);
@@ -92,7 +92,7 @@ int test_continuous_scan_reads_both_encoders_without_key_interrupt(void)
     for (i = 0U; i < 4U; i++)
         ScanFrame(reverse[i], forward[i], 0U);
     CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == 2);
-    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == -2);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == 2);
     return 0;
 }
 
@@ -110,7 +110,7 @@ int test_aux_scan_preserves_keyboard_main_encoder_and_rejects_bounce(void)
     Input_Configure(&config);
     for (i = 0U; i < 8U; i++)
         ScanFrame(bounce[i], 0U, 1UL << 11U);
-    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == 2);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == -2);
     CHECK(Input_KeyIsDown(Key_10_3) != 0U);
     CHECK(Input_KeyPressed(Key_10_3) == 1U && Input_KeyPressed(Key_10_3) == 0U);
     PollAB(2U);
@@ -239,22 +239,22 @@ int test_aux_each_detent_counts_once_on_00_and_11_with_swapped_roles(void)
     CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == 0);
     CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == 0);
     ScanFrame(3U, 3U, 0U);
-    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == 1);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == -1);
     CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == -1);
     ScanFrame(3U, 3U, 0U);
     CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == 0);
     CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == 0);
     ScanFrame(1U, 2U, 0U);
     ScanFrame(0U, 0U, 0U);
-    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == 1);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == -1);
     CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == -1);
     ScanFrame(1U, 2U, 0U);
     ScanFrame(3U, 3U, 0U);
-    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == -1);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == 1);
     CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == 1);
     ScanFrame(2U, 1U, 0U);
     ScanFrame(0U, 0U, 0U);
-    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == -1);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == 1);
     CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == 1);
     return 0;
 }
