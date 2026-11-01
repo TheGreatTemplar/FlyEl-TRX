@@ -703,3 +703,27 @@ int test_rit_shift_indicators_fit_all_meter_frames_and_survive_readout_timeout(v
     CHECK(strcmp(StatusUI_AuxMessage(), "RIT OFF") == 0);
     return 0;
 }
+
+
+int test_lock_badge_is_full_word_and_inverse(void)
+{
+    uint8_t x;
+    uint8_t y;
+    uint8_t width;
+    uint8_t expected[32 * 11];
+    InitControls();
+    test_eeprom_message = "";
+    aux_message_valid = 0U;
+    LCD_ClearBuffer();
+    width = Widgets_Label(0U, 0U, "LOCK", 1U);
+    CHECK(width < 32U && width == LCD_GetText5x7Width("LOCK", 1U) + 4U);
+    for (y = 0U; y < 11U; y++)
+        for (x = 0U; x < width; x++)
+            expected[(uint16_t)y * 32U + x] = Pixel(x, y);
+    Radio_ToggleLock();
+    Screens_Redraw();
+    for (y = 0U; y < 11U; y++)
+        for (x = 0U; x < width; x++)
+            CHECK(expected[(uint16_t)y * 32U + x] == Pixel(x, y));
+    return 0;
+}

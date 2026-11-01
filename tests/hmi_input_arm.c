@@ -258,3 +258,73 @@ int test_aux_each_detent_counts_once_on_00_and_11_with_swapped_roles(void)
     CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == 1);
     return 0;
 }
+
+
+/* У одной ручки щелчки 00/11, у второй — 01/10: первый обратный щелчок не теряется. */
+int test_aux_independent_detent_phases_reverse_on_first_click(void)
+{
+    uint8_t i;
+    InputFixture();
+    ScanFrame(0U, 1U, 0U);
+    for (i = 0U; i < 12U; i++)
+    {
+        ScanFrame(2U, 0U, 0U);
+        ScanFrame(3U, 2U, 0U);
+        CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == -1);
+        CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == 1);
+        ScanFrame(2U, 0U, 0U);
+        ScanFrame(0U, 1U, 0U);
+        CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == 1);
+        CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == -1);
+    }
+    return 0;
+}
+
+
+int test_main_encoder_invalid_transition_resynchronizes_before_first_reverse_click(void)
+{
+    hmi_config_t config;
+    encoder_decoder_t state;
+    HMI_Defaults(&config);
+    Encoder_Reset(&state, 0U, 0U);
+    CHECK(sizeof(state) == 8U);
+    CHECK(Encoder_Update(&state, 2U, 1U, &config) == 0);
+    /* Оба контакта изменились между опросами: направление не угадываем. */
+    CHECK(Encoder_Update(&state, 1U, 2U, &config) == 0);
+    CHECK(Encoder_Update(&state, 0U, 3U, &config) == 0);
+    CHECK(Encoder_Update(&state, 1U, 4U, &config) == 0);
+    CHECK(Encoder_Update(&state, 3U, 5U, &config) == 0);
+    CHECK(Encoder_Update(&state, 2U, 6U, &config) == 0);
+    CHECK(Encoder_Update(&state, 0U, 7U, &config) == -1);
+    return 0;
+}
+
+
+int test_encoder_all_start_phases_partial_return_and_first_reverse_click(void)
+{
+    hmi_config_t config;
+    encoder_decoder_t state;
+    uint8_t phase;
+    uint8_t steps;
+    uint8_t i;
+    uint32_t tick = 0U;
+    static const uint8_t forward[4] = {0U, 2U, 3U, 1U};
+    HMI_Defaults(&config);
+    for (steps = 2U; steps <= 4U; steps = (uint8_t)(steps + 2U))
+    {
+        config.encoder_steps = steps;
+        for (phase = 0U; phase < 4U; phase++)
+        {
+            Encoder_Reset(&state, forward[phase], tick);
+            for (i = 1U; i <= steps; i++)
+                CHECK(Encoder_Update(&state, forward[(phase + i) % 4U], ++tick, &config) == (i == steps ? 1 : 0));
+            phase = (uint8_t)((phase + steps) % 4U);
+            CHECK(Encoder_Update(&state, forward[(phase + 1U) % 4U], ++tick, &config) == 0);
+            CHECK(Encoder_Update(&state, forward[phase], ++tick, &config) == 0);
+            for (i = 1U; i <= steps; i++)
+                CHECK(Encoder_Update(&state, forward[(phase + 4U - i) % 4U], ++tick, &config) == (i == steps ? -1 : 0));
+            phase = (uint8_t)((phase + 4U - steps) % 4U);
+        }
+    }
+    return 0;
+}

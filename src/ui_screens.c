@@ -101,8 +101,8 @@ static void DrawMainScreen(void)
     LCD_ClearBuffer();
 
     /* TX stays in the upper-left corner. */
-    tx_width =
-        Widgets_Label(0U, 0U, (menu.tx_active != 0U) ? "TX" : (Radio_Locked() != 0U ? "LCK" : "RX"), menu.tx_active);
+    tx_width = Widgets_Label(0U, 0U, (menu.tx_active != 0U) ? "TX" : (Radio_Locked() != 0U ? "LOCK" : "RX"),
+                             (uint8_t)(menu.tx_active != 0U || Radio_Locked() != 0U));
 
     mode_text = RadioMode_Name(RadioVfo_Mode());
 
