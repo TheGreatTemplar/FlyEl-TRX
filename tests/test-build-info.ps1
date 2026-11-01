@@ -16,6 +16,11 @@ $taskSavedPath = $env:PATH
 $taskSavedGit = $env:FLYEL_GIT
 try {
     $taskResolved = Resolve-FlyElGit
+    $env:FLYEL_GIT = ''
+    $taskGitFolder = Split-Path -Parent $taskResolved
+    $env:PATH = $taskGitFolder + ';' + $taskSavedPath + ';' + $taskGitFolder
+    if ((@(Resolve-FlyElGit)).Count -ne 1) { throw 'Multiple PATH matches must resolve to one executable' }
+    if ((Get-FlyElGitValue $taskRoot @('rev-parse','HEAD')) -cne $taskRevision) { throw 'Git discovery with multiple PATH matches failed' }
     $env:PATH = ''
     $env:FLYEL_GIT = $taskSavedGit
     # Reproduces an IDE launched before Codex added its bundled Git to PATH.

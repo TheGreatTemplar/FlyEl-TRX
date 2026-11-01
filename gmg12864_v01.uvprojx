@@ -524,6 +524,16 @@
               <FilePath>.\src\input.c</FilePath>
             </File>
             <File>
+              <FileName>input_aux.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\input_aux.c</FilePath>
+            </File>
+            <File>
+              <FileName>input_aux.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\input_aux.h</FilePath>
+            </File>
+            <File>
               <FileName>input.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\src\input.h</FilePath>

@@ -2,20 +2,17 @@
 #include "stm32f10x.h"
 #include "board_pins.h"
 #include "input_encoder.h"
+#include "input_aux.h"
 
-/* CD4017: physical pins Q1..Q9 = 2,4,7,10,1,5,6,9,11.
- * Q0 is the idle state. A pressed OUT is low in Q0 and rises when
- * its selected counter output goes high. EXTI4 wakes the keyboard;
- * scan one position per timer tick only while active.
- * Encoder polling remains 2000 Hz; defaults are four transitions per detent.
+/* CD4017: непрерывный проход Q0..Q9 за 5 мс, одна позиция на тик TIM2.
+ * Q0 задаёт базовый уровень кнопок, Q1..Q4 также опрашивают RIT/SHIFT.
+ * Основной энкодер PB13/PB14 по-прежнему читается каждые 500 мкс.
  */
 #define ENC_A_GPIO GPIOB
 #define ENC_B_GPIO GPIOB
 #define ENC_A_PIN 13U
 #define ENC_B_PIN 14U
 #define KEY_EXTI_MASK (1UL << KEY_INT_PIN)
-
-void EXTI4_IRQHandler(void);
 
 static const char *const physical_key_names[27] = {
     "Key_2_1",  "Key_2_2",  "Key_2_3",  "Key_4_1", "Key_4_2", "Key_4_3", "Key_7_1",  "Key_7_2",  "Key_7_3",
@@ -35,9 +32,6 @@ static uint32_t input_ticks;
 static uint8_t scan_position;
 static uint8_t scan_baseline;
 static uint32_t scan_mask;
-static volatile uint8_t keyboard_active;
-static uint8_t release_pending;
-static uint32_t release_tick;
 
 /* Сохраняет PRIMASK перед доступом к данным, общим для основного цикла и ISR. */
 static uint32_t Input_CriticalEnter(void)
@@ -144,7 +138,7 @@ static void Keyboard_Settle(void)
 }
 
 
-/* Выбирает Q0, в котором любая кнопка может сформировать запрос INT. */
+/* Выбирает Q0 для измерения базового уровня OUT в начале каждого прохода. */
 static void Keyboard_Reset(void)
 {
     GPIO_WriteLow(KEY_CLK_GPIO, KEY_CLK_PIN);
@@ -169,39 +163,6 @@ static uint8_t Keyboard_ReadOuts(void)
 {
     /* OUT1..OUT3 are consecutive PB3..PB5. */
     return (uint8_t)((KEY_OUT_GPIO->IDR >> KEY_OUT_FIRST_PIN) & 7U);
-}
-
-
-/* Возвращает клавиатуру в ожидание; проверка уровня закрывает гонку при повторном разрешении EXTI. */
-static void Keyboard_ArmInterrupt(void)
-{
-    /* Q0 is already selected. Discard edges caused by the scan itself. */
-    EXTI->IMR &= ~KEY_EXTI_MASK;
-    EXTI->PR = KEY_EXTI_MASK;
-    keyboard_active = 0U;
-    EXTI->IMR |= KEY_EXTI_MASK;
-
-    /* An already-held key has no new falling edge. Also close the
-     * clear/unmask race by sampling the levels once when entering idle. */
-    if (GPIO_ReadPin(KEY_INT_GPIO, KEY_INT_PIN) == 0U || Keyboard_ReadOuts() != 7U)
-    {
-        EXTI->IMR &= ~KEY_EXTI_MASK;
-        EXTI->PR = KEY_EXTI_MASK;
-        keyboard_active = 1U;
-    }
-}
-
-
-/* Маскирует INT и будит сканер; задержек и сканирования внутри обработчика нет. */
-void EXTI4_IRQHandler(void)
-{
-    if ((EXTI->PR & KEY_EXTI_MASK) != 0U)
-    {
-        /* The timer performs the scan; no GPIO clocking or delays here. */
-        EXTI->IMR &= ~KEY_EXTI_MASK;
-        EXTI->PR = KEY_EXTI_MASK;
-        keyboard_active = 1U;
-    }
 }
 
 
@@ -235,7 +196,7 @@ static void Keyboard_Debounce(uint32_t raw_mask)
 }
 
 
-/* Обрабатывает одну позицию CD4017; после устойчивого отпускания снова разрешает INT. */
+/* Читает одну установившуюся позицию; опрос продолжается и без нажатых кнопок. */
 static void Keyboard_Poll500us(void)
 {
     uint8_t outs = Keyboard_ReadOuts();
@@ -243,28 +204,13 @@ static void Keyboard_Poll500us(void)
     if (scan_position == 0U)
     {
         scan_baseline = (uint8_t)(~outs & 7U);
-        if (scan_baseline == 0U)
-        {
-            Keyboard_Debounce(0U);
-            if (release_pending == 0U)
-            {
-                release_pending = 1U;
-                release_tick = input_ticks;
-            }
-            else if ((uint32_t)(input_ticks - release_tick) >= ((uint32_t)input_config.debounce_ms * 2U))
-            {
-                release_pending = 0U;
-                Keyboard_ArmInterrupt();
-            }
-            return;
-        }
-        release_pending = 0U;
         scan_mask = 0U;
         Keyboard_Clock();
         scan_position = 1U;
         return;
     }
 
+    AuxEncoder_Sample(scan_position, GPIO_ReadPin(AUX_ENC_GPIO, AUX_ENC_PIN), input_ticks);
     for (out = 0U; out < 3U; out++)
     {
         if ((outs & scan_baseline & (1U << out)) != 0U)
@@ -286,7 +232,7 @@ static void Keyboard_Poll500us(void)
 }
 
 
-/* Настраивает энкодер и CD4017, сбрасывает счётчик в Q0 и разрешает EXTI4. */
+/* Настраивает три энкодера и CD4017; EXTI4 отключён, сканирование непрерывное. */
 void Input_Init(void)
 {
     uint8_t i;
@@ -303,19 +249,17 @@ void Input_Init(void)
     {
         GPIO_ConfigInputPullup(KEY_OUT_GPIO, (uint8_t)(KEY_OUT_FIRST_PIN + i));
     }
-    /* PA4 -> EXTI4, falling edge only. Configure before arming. */
+    /* PA15 — плавающий вход: внешняя подтяжка 27 кОм удерживает ноль.
+     * JTAG отключён в main.c, SWD на PA13/PA14 сохранён. */
+    GPIOA->CRH = (GPIOA->CRH & ~(0xFUL << 28U)) | (0x4UL << 28U);
     EXTI->IMR &= ~KEY_EXTI_MASK;
-    AFIO->EXTICR[1] &= ~0xFUL;
     EXTI->RTSR &= ~KEY_EXTI_MASK;
-    EXTI->FTSR |= KEY_EXTI_MASK;
+    EXTI->FTSR &= ~KEY_EXTI_MASK;
     EXTI->PR = KEY_EXTI_MASK;
+    NVIC_DisableIRQ(EXTI4_IRQn);
     NVIC_ClearPendingIRQ(EXTI4_IRQn);
-    /* Same priority as TIM2: keyboard state updates cannot preempt each other. */
-    NVIC_SetPriority(EXTI4_IRQn, 2U);
     Keyboard_Reset();
-    keyboard_active = 0U;
-    release_pending = 0U;
-    release_tick = 0U;
+    AuxEncoder_Reset();
     scan_position = 0U;
     scan_baseline = 0U;
     scan_mask = 0U;
@@ -331,12 +275,10 @@ void Input_Init(void)
     HMI_Defaults(&input_config);
     Encoder_Reset(&encoder_decoder, Encoder_ReadAB(), input_ticks);
     encoder_steps = 0;
-    NVIC_EnableIRQ(EXTI4_IRQn);
-    Keyboard_ArmInterrupt();
 }
 
 
-/* Короткая атомарная смена параметров; сканер клавиатуры и EXTI не останавливаются. */
+/* Короткая атомарная смена параметров основного энкодера и дребезга кнопок. */
 void Input_Configure(const hmi_config_t *config)
 {
     uint32_t primask = Input_CriticalEnter();
@@ -347,17 +289,22 @@ void Input_Configure(const hmi_config_t *config)
 }
 
 
-/* Вызывается из TIM2 каждые 500 мкс: энкодер всегда, клавиатура только после INT. */
+/* TIM2 каждые 500 мкс: основной энкодер и одна позиция общего сканера. */
 void Input_Poll500us(void)
 {
     input_ticks++;
     encoder_steps += Encoder_Update(&encoder_decoder, Encoder_ReadAB(), input_ticks, &input_config);
+    Keyboard_Poll500us();
+}
 
-    /* Idle keyboard cost: one flag check, with no GPIO reads or scanning. */
-    if (keyboard_active != 0U)
-    {
-        Keyboard_Poll500us();
-    }
+
+/* Забирает события дополнительных энкодеров атомарно относительно TIM2. */
+int32_t Input_GetAuxEncoderSteps(input_aux_encoder_t encoder)
+{
+    uint32_t primask = Input_CriticalEnter();
+    int32_t steps = AuxEncoder_Take(encoder);
+    Input_CriticalExit(primask);
+    return steps;
 }
 
 

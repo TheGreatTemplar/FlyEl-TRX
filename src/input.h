@@ -58,12 +58,21 @@ typedef enum
     INPUT_KEY_COUNT
 } input_key_t;
 
+typedef enum
+{
+    INPUT_AUX_RIT = 0,
+    INPUT_AUX_SHIFT,
+    INPUT_AUX_COUNT
+} input_aux_encoder_t;
+
 void Input_Init(void);
 /* Применение HMI в основном контексте, сброс частичного шага и накопленных событий энкодера. */
 void Input_Configure(const hmi_config_t *config);
 void Input_Poll500us(void);
 
 int32_t Input_GetEncoderSteps(void);
+/* Забирает шаги RIT/SHIFT в основном цикле; четыре перехода на полный щелчок. */
+int32_t Input_GetAuxEncoderSteps(input_aux_encoder_t encoder);
 
 uint8_t Input_KeyPressed(input_key_t key);
 uint8_t Input_KeyIsDown(input_key_t key);

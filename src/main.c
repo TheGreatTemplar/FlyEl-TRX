@@ -263,6 +263,8 @@ static void App_ShowStartupScreen(void)
 
     /* Discard input collected while the splash was visible. */
     (void)Input_GetEncoderSteps();
+    (void)Input_GetAuxEncoderSteps(INPUT_AUX_RIT);
+    (void)Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT);
     for (key = 0U; key < (uint8_t)INPUT_KEY_COUNT; key++)
     {
         while (Input_KeyPressed((input_key_t)key) != 0U)

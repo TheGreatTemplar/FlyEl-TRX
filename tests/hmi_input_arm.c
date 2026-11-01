@@ -9,6 +9,7 @@ static GPIO_TypeDef hmi_gpio_b;
 #define GPIOB (&hmi_gpio_b)
 #include "hmi_config.c"
 #include "input_encoder.c"
+#include "input_aux.c"
 #include "input.c"
 #define CHECK(x)                                                                                                       \
     do                                                                                                                 \
@@ -27,7 +28,11 @@ static void InputFixture(void)
     memset(key_last_raw, 0, sizeof(key_last_raw));
     memset(key_change_tick, 0, sizeof(key_change_tick));
     input_ticks = 0U;
-    keyboard_active = 0U;
+    memset(&hmi_gpio_a, 0, sizeof(hmi_gpio_a));
+    scan_position = 0U;
+    scan_baseline = 0U;
+    scan_mask = 0U;
+    AuxEncoder_Reset();
     Input_Configure(&config);
 }
 
@@ -36,6 +41,101 @@ static void PollAB(uint8_t ab)
 {
     hmi_gpio_b.IDR = ((uint32_t)(ab >> 1U) << 13U) | ((uint32_t)(ab & 1U) << 14U);
     Input_Poll500us();
+}
+
+
+/* Модель диодной матрицы: на входах уровни выбранного Q до очередного тика. */
+static void ScanFrame(uint8_t rit, uint8_t shift, uint32_t keys)
+{
+    uint8_t i;
+    uint8_t columns = (uint8_t)((keys | (keys >> 3U) | (keys >> 6U) | (keys >> 9U) | (keys >> 12U) | (keys >> 15U) |
+                                 (keys >> 18U) | (keys >> 21U) | (keys >> 24U)) &
+                                7U);
+    for (i = 0U; i < 10U; i++)
+    {
+        uint8_t outs = (uint8_t)(~columns & 7U);
+        uint8_t level = 0U;
+        if (scan_position != 0U)
+            outs |= (uint8_t)((keys >> ((scan_position - 1U) * 3U)) & 7U);
+        if (scan_position == 1U)
+            level = (uint8_t)(rit >> 1U);
+        else if (scan_position == 2U)
+            level = (uint8_t)(rit & 1U);
+        else if (scan_position == 3U)
+            level = (uint8_t)(shift >> 1U);
+        else if (scan_position == 4U)
+            level = (uint8_t)(shift & 1U);
+        hmi_gpio_b.IDR = (hmi_gpio_b.IDR & ~(7UL << 3U)) | ((uint32_t)outs << 3U);
+        hmi_gpio_a.IDR = (uint32_t)level << 15U;
+        Input_Poll500us();
+    }
+}
+
+
+int test_continuous_scan_reads_both_encoders_without_key_interrupt(void)
+{
+    uint8_t i;
+    static const uint8_t forward[] = {2U, 3U, 1U, 0U};
+    static const uint8_t reverse[] = {1U, 3U, 2U, 0U};
+    InputFixture();
+    ScanFrame(0U, 0U, 0U);
+    for (i = 0U; i < 4U; i++)
+        ScanFrame(forward[i], reverse[i], 0U);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == 1);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == -1);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == 0);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_COUNT) == 0);
+    CHECK(Input_GetRawKeyMask() == 0U && Input_GetEncoderSteps() == 0);
+    for (i = 0U; i < 100U; i++)
+        ScanFrame(0U, 0U, 0U);
+    CHECK(scan_position == 0U && input_ticks == 1050U);
+    for (i = 0U; i < 4U; i++)
+        ScanFrame(reverse[i], forward[i], 0U);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == -1);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == 1);
+    return 0;
+}
+
+
+int test_aux_scan_preserves_keyboard_main_encoder_and_rejects_bounce(void)
+{
+    uint8_t i;
+    hmi_config_t config;
+    static const uint8_t bounce[] = {2U, 0U, 2U, 3U, 2U, 3U, 1U, 0U};
+    InputFixture();
+    ScanFrame(0U, 0U, 0U);
+    HMI_Defaults(&config);
+    config.encoder_reverse = 1U;
+    config.encoder_steps = 1U;
+    Input_Configure(&config);
+    for (i = 0U; i < 8U; i++)
+        ScanFrame(bounce[i], 0U, 1UL << 11U);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == 1);
+    CHECK(Input_KeyIsDown(Key_10_3) != 0U);
+    CHECK(Input_KeyPressed(Key_10_3) == 1U && Input_KeyPressed(Key_10_3) == 0U);
+    PollAB(2U);
+    CHECK(Input_GetEncoderSteps() == -1);
+    for (i = 0U; i < 5U; i++)
+        ScanFrame(0U, 0U, 0U);
+    CHECK(Input_KeyIsDown(Key_10_3) == 0U);
+    CHECK(Input_GetRawKeyMask() == 0U);
+    ScanFrame(3U, 3U, 0U);
+    ScanFrame(0U, 0U, 0U);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == 0);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == 0);
+    return 0;
+}
+
+
+int test_aux_startup_closed_contacts_do_not_emit_steps(void)
+{
+    uint8_t i;
+    InputFixture();
+    for (i = 0U; i < 10U; i++)
+        ScanFrame(3U, 3U, 0U);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_RIT) == 0);
+    CHECK(Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT) == 0);
+    return 0;
 }
 
 

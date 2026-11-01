@@ -22,6 +22,7 @@
 #include "service_contrast.h"
 #include "service_lcd_test.h"
 #include "service_hmi.h"
+#include "ui_status.h"
 
 generator_menu_t menu;
 
@@ -148,6 +149,8 @@ void GeneratorMenu_Task(void)
         menu.need_redraw = 1U;
     }
     Keyboard_Task(key);
+    StatusUI_AuxEncoder(INPUT_AUX_RIT, Input_GetAuxEncoderSteps(INPUT_AUX_RIT));
+    StatusUI_AuxEncoder(INPUT_AUX_SHIFT, Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT));
     steps = Input_GetEncoderSteps();
     if (steps != 0)
     {

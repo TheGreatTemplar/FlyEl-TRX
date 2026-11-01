@@ -8,7 +8,7 @@ function Resolve-FlyElGit {
         }
         return (Resolve-Path -LiteralPath $env:FLYEL_GIT).ProviderPath
     }
-    $taskCommand = Get-Command git.exe -CommandType Application -ErrorAction SilentlyContinue
+    $taskCommand = Get-Command git.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($taskCommand) { return $taskCommand.Source }
     $taskCandidates = @()
     foreach ($taskBase in @($env:ProgramFiles, ${env:ProgramFiles(x86)})) {

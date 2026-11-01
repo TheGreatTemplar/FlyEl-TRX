@@ -14,6 +14,39 @@
 #include "gmg12864.h"
 #include "ui_layout.h"
 
+static int32_t aux_positions[INPUT_AUX_COUNT];
+static char aux_message[16];
+static uint32_t aux_message_tick;
+
+void StatusUI_AuxEncoder(input_aux_encoder_t encoder, int32_t steps)
+{
+    char number[6];
+    int32_t position;
+    if ((uint8_t)encoder >= INPUT_AUX_COUNT || steps == 0)
+    {
+        return;
+    }
+    /* Ограничиваем диагностический счётчик, не меняя частоту и параметры тракта. */
+    if (steps > 9999)
+        steps = 9999;
+    if (steps < -9999)
+        steps = -9999;
+    position = aux_positions[encoder] + steps;
+    if (position > 9999)
+        position = 9999;
+    if (position < -9999)
+        position = -9999;
+    aux_positions[encoder] = position;
+    aux_message[0] = '\0';
+    Text_Append(aux_message, encoder == INPUT_AUX_RIT ? "RIT " : "SHIFT ");
+    Text_Append(aux_message, position < 0 ? "-" : "+");
+    Text_U32ToDec(number, (uint32_t)(position < 0 ? -position : position), 1U);
+    Text_Append(aux_message, number);
+    aux_message_tick = App_GetTick500us();
+    menu.need_redraw = 1U;
+}
+
+
 const char *StatusUI_Header(void)
 {
     if (EEPROM_TestStatus()[0] != '\0')
@@ -24,6 +57,8 @@ const char *StatusUI_Header(void)
         return MemoryStore_Status();
     if (Scan_Active() != 0U)
         return "SCAN";
+    if (aux_message[0] != '\0' && (uint32_t)(App_GetTick500us() - aux_message_tick) < 4000U)
+        return aux_message;
     return KeyLayout_Name(menu.last_key);
 }
 

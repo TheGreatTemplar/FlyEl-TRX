@@ -582,3 +582,37 @@ int test_display_set_aligns_with_main_frequency_on_every_band(void)
     }
     return 0;
 }
+
+
+/* Новые ручки показывают независимые счётчики, не меняя RF и не скрывая ошибки. */
+int test_aux_diagnostic_counts_timeout_priorities_and_tick_wrap(void)
+{
+    uint32_t rf;
+    InitControls();
+    test_eeprom_message = "";
+    rf = menu.rf_hz;
+    memset(aux_positions, 0, sizeof(aux_positions));
+    now_tick = 0xFFFFFF00U;
+    StatusUI_AuxEncoder(INPUT_AUX_RIT, 1);
+    CHECK(strcmp(StatusUI_Header(), "RIT +1") == 0 && menu.rf_hz == rf);
+    StatusUI_AuxEncoder(INPUT_AUX_RIT, 1);
+    CHECK(strcmp(StatusUI_Header(), "RIT +2") == 0);
+    StatusUI_AuxEncoder(INPUT_AUX_SHIFT, -1);
+    CHECK(strcmp(StatusUI_Header(), "SHIFT -1") == 0);
+    now_tick += 3999U;
+    CHECK(strcmp(StatusUI_Header(), "SHIFT -1") == 0);
+    test_eeprom_message = "EEPROM ERROR";
+    CHECK(strcmp(StatusUI_Header(), "EEPROM ERROR") == 0);
+    test_eeprom_message = "";
+    now_tick++;
+    CHECK(strcmp(StatusUI_Header(), "SHIFT -1") != 0);
+    StatusUI_AuxEncoder(INPUT_AUX_SHIFT, 2147483647);
+    CHECK(strcmp(StatusUI_Header(), "SHIFT +9998") == 0);
+    StatusUI_AuxEncoder(INPUT_AUX_SHIFT, 2147483647);
+    CHECK(strcmp(StatusUI_Header(), "SHIFT +9999") == 0);
+    StatusUI_AuxEncoder(INPUT_AUX_COUNT, 1);
+    CHECK(strcmp(StatusUI_Header(), "SHIFT +9999") == 0 && menu.rf_hz == rf);
+    CHECK(LCD_GetText5x7Width(aux_message, 1U) < 110U);
+    now_tick += 4000U;
+    return 0;
+}
