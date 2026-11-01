@@ -55,6 +55,7 @@ static void InitControls(void)
     menu.step_index = 3U;
     mock_uart_config = (uart_config_t){115200U, 8U, UART_PARITY_NONE, UART_STOP_ONE, 0U};
     mock_uart_saves = 0U;
+    Radio_InitOffsets();
     RadioVfo_Init();
     RadioPanel_Init();
     MemoryControl_Init();
@@ -646,5 +647,127 @@ int test_invalid_direct_entry_preserves_memory_mode_and_channel(void)
     CHECK(strcmp(Entry_Status(), "INPUT ERR") == 0);
     CHECK(MemoryControl_Mode() != 0U && MemoryControl_Channel() == 7U);
     CHECK(menu.rf_hz == 7100000U && menu.band_index == 2U);
+    return 0;
+}
+
+
+int test_rit_key_gates_ten_hz_steps_and_preserves_vfo_and_saved_offset(void)
+{
+    uint32_t rf;
+    radio_preset_t preset;
+    InitControls();
+    rf = menu.rf_hz;
+    CHECK(Radio_AdjustAuxEncoder(INPUT_AUX_RIT, 1) == 0U);
+    Tap(Key_11_2, 100U);
+    CHECK(Radio_RitActive() == 1U && strcmp(KeyLayout_Name(Key_11_2), "RIT") == 0);
+    CHECK(Radio_AdjustAuxEncoder(INPUT_AUX_RIT, 1) == 1U);
+    CHECK(Radio_OffsetHz(INPUT_AUX_RIT) == 10 && synth_frequency == rf + 10U);
+    preset = RadioVfo_Capture();
+    CHECK(preset.hz == rf && menu.rf_hz == rf);
+    Tap(Key_11_2, 100U);
+    CHECK(Radio_RitActive() == 0U && Radio_OffsetHz(INPUT_AUX_RIT) == 10 && synth_frequency == rf);
+    CHECK(Radio_AdjustAuxEncoder(INPUT_AUX_RIT, -20) == 0U);
+    Tap(Key_11_2, 100U);
+    CHECK(synth_frequency == rf + 10U);
+    CHECK(Radio_AdjustAuxEncoder(INPUT_AUX_RIT, 2147483647) != 0U);
+    CHECK(Radio_OffsetHz(INPUT_AUX_RIT) == 1200 && synth_frequency == rf + 1200U);
+    CHECK(Radio_AdjustAuxEncoder(INPUT_AUX_RIT, (-2147483647 - 1)) != 0U);
+    CHECK(Radio_OffsetHz(INPUT_AUX_RIT) == -1200 && synth_frequency == rf - 1200U);
+    menu.tx_active = 1U;
+    Radio_ApplySynth();
+    CHECK(synth_frequency == rf && Radio_RitActive() != 0U);
+    menu.tx_active = 0U;
+    Radio_ApplySynth();
+    CHECK(synth_frequency == rf - 1200U);
+    CHECK(Radio_AdjustAuxEncoder(INPUT_AUX_COUNT, 1) == 0U);
+    return 0;
+}
+
+
+int test_shift_limits_all_modes_narrow_am_and_auto_enable_at_nonzero(void)
+{
+    uint8_t mode;
+    uint8_t filter;
+    radio_preset_t preset;
+    InitControls();
+    preset = RadioVfo_Capture();
+    for (mode = 0U; mode < RADIO_MODE_COUNT; mode++)
+    {
+        for (filter = 0U; filter < RADIO_FILTER_COUNT; filter++)
+        {
+            int16_t limit =
+                mode == RADIO_AM ? 0 : ((mode >= RADIO_CW && mode <= RADIO_RTTY_R && filter == 2U) ? 250 : 1200);
+            preset.mode = mode;
+            preset.filter = filter;
+            RadioVfo_Apply(&preset);
+            CHECK(Radio_ShiftLimitHz() == limit);
+            (void)Radio_AdjustAuxEncoder(INPUT_AUX_SHIFT, 2147483647);
+            CHECK(Radio_OffsetHz(INPUT_AUX_SHIFT) == limit);
+            CHECK(Radio_ShiftActive() == (uint8_t)(limit != 0));
+            (void)Radio_AdjustAuxEncoder(INPUT_AUX_SHIFT, (-2147483647 - 1));
+            CHECK(Radio_OffsetHz(INPUT_AUX_SHIFT) == -limit);
+            (void)Radio_AdjustAuxEncoder(INPUT_AUX_SHIFT, (int32_t)limit / 10);
+            CHECK(Radio_OffsetHz(INPUT_AUX_SHIFT) == 0 && Radio_ShiftActive() == 0U);
+            CHECK(menu.rf_hz == preset.hz && synth_frequency == preset.hz);
+        }
+    }
+    preset.mode = RADIO_CW;
+    preset.filter = 1U;
+    RadioVfo_Apply(&preset);
+    (void)Radio_AdjustAuxEncoder(INPUT_AUX_SHIFT, 120);
+    RadioVfo_CycleFilter();
+    CHECK(Radio_OffsetHz(INPUT_AUX_SHIFT) == 250);
+    preset.mode = RADIO_AM;
+    RadioVfo_Apply(&preset);
+    CHECK(Radio_OffsetHz(INPUT_AUX_SHIFT) == 0 && Radio_ShiftActive() == 0U);
+    CHECK(Radio_AdjustAuxEncoder(INPUT_AUX_SHIFT, 1) == 0U);
+    return 0;
+}
+
+
+int test_lock_only_blocks_main_tuning_not_keys_offsets_or_quick_settings(void)
+{
+    uint32_t rf;
+    InitControls();
+    rf = menu.rf_hz;
+    Tap(Key_11_3, 100U);
+    CHECK(Radio_Locked() == 1U && strcmp(KeyLayout_Name(Key_11_3), "LOCK") == 0);
+    Radio_TuneSteps(1);
+    CHECK(menu.rf_hz == rf);
+    Tap(Key_11_2, 100U);
+    CHECK(Radio_AdjustAuxEncoder(INPUT_AUX_RIT, 1) != 0U);
+    CHECK(Radio_AdjustAuxEncoder(INPUT_AUX_SHIFT, 1) != 0U);
+    CHECK(Radio_OffsetHz(INPUT_AUX_RIT) == 10 && Radio_OffsetHz(INPUT_AUX_SHIFT) == 10);
+    Tap(Key_9_3, 100U);
+    CHECK(menu.band_index == 0U && Radio_Locked() == 1U);
+    Tap(Key_6_3, 2001U);
+    CHECK(Settings_Page() == 1U);
+    Settings_Encoder(1);
+    CHECK(panel.nb_level == 51U);
+    Tap(Key_6_3, 100U);
+    CHECK(Settings_Page() == 0U);
+    Tap(Key_11_3, 100U);
+    rf = menu.rf_hz;
+    Radio_TuneSteps(1);
+    CHECK(Radio_Locked() == 0U && menu.rf_hz == rf + steps_hz[menu.step_index]);
+    return 0;
+}
+
+
+int test_rit_receive_limits_and_mode_changes_keep_base_frequency(void)
+{
+    InitControls();
+    Radio_SetFrequency(RADIO_MIN_HZ);
+    Radio_ToggleRit();
+    (void)Radio_AdjustAuxEncoder(INPUT_AUX_RIT, -120);
+    CHECK(Radio_ReceiveHz() == RADIO_MIN_HZ && menu.rf_hz == RADIO_MIN_HZ);
+    Radio_SetFrequency(RADIO_MAX_HZ);
+    (void)Radio_AdjustAuxEncoder(INPUT_AUX_RIT, 240);
+    CHECK(Radio_ReceiveHz() == RADIO_MAX_HZ && menu.rf_hz == RADIO_MAX_HZ);
+    Radio_SetFrequency(7100000U);
+    Tap(Key_10_1, 100U);
+    CHECK(synth_frequency == 7101200U && menu.rf_hz == 7100000U);
+    Radio_InitOffsets();
+    CHECK(Radio_RitActive() == 0U && Radio_ShiftActive() == 0U && Radio_Locked() == 0U);
     return 0;
 }

@@ -584,34 +584,41 @@ int test_display_set_aligns_with_main_frequency_on_every_band(void)
 }
 
 
-/* Новые ручки показывают независимые счётчики, не меняя RF и не скрывая ошибки. */
+/* Смещения показаны в Гц, VFO не меняется, ошибки имеют приоритет. */
 int test_aux_diagnostic_counts_timeout_priorities_and_tick_wrap(void)
 {
     uint32_t rf;
     InitControls();
     test_eeprom_message = "";
     rf = menu.rf_hz;
-    memset(aux_positions, 0, sizeof(aux_positions));
+    aux_message_valid = 0U;
+    Radio_ToggleRit();
     now_tick = 0xFFFFFF00U;
-    StatusUI_AuxEncoder(INPUT_AUX_RIT, 1);
-    CHECK(strcmp(StatusUI_AuxMessage(), "RIT +1") == 0 && menu.rf_hz == rf);
-    StatusUI_AuxEncoder(INPUT_AUX_RIT, 1);
-    CHECK(strcmp(StatusUI_AuxMessage(), "RIT +2") == 0);
-    StatusUI_AuxEncoder(INPUT_AUX_SHIFT, -1);
-    CHECK(strcmp(StatusUI_AuxMessage(), "SHIFT -1") == 0);
+    (void)Radio_AdjustAuxEncoder(INPUT_AUX_RIT, 1);
+    StatusUI_AuxEncoder(INPUT_AUX_RIT);
+    CHECK(strcmp(StatusUI_AuxMessage(), "RIT +10") == 0 && menu.rf_hz == rf);
+    (void)Radio_AdjustAuxEncoder(INPUT_AUX_RIT, 1);
+    StatusUI_AuxEncoder(INPUT_AUX_RIT);
+    CHECK(strcmp(StatusUI_AuxMessage(), "RIT +20") == 0);
+    (void)Radio_AdjustAuxEncoder(INPUT_AUX_SHIFT, -1);
+    StatusUI_AuxEncoder(INPUT_AUX_SHIFT);
+    CHECK(strcmp(StatusUI_AuxMessage(), "SHIFT -10") == 0);
     now_tick += 3999U;
-    CHECK(strcmp(StatusUI_AuxMessage(), "SHIFT -1") == 0);
+    CHECK(strcmp(StatusUI_AuxMessage(), "SHIFT -10") == 0);
     test_eeprom_message = "EEPROM ERROR";
     CHECK(strcmp(StatusUI_Header(), "EEPROM ERROR") == 0);
     test_eeprom_message = "";
     now_tick++;
-    CHECK(strcmp(StatusUI_AuxMessage(), "SHIFT -1") != 0);
-    StatusUI_AuxEncoder(INPUT_AUX_SHIFT, 2147483647);
-    CHECK(strcmp(StatusUI_AuxMessage(), "SHIFT +9998") == 0);
-    StatusUI_AuxEncoder(INPUT_AUX_SHIFT, 2147483647);
-    CHECK(strcmp(StatusUI_AuxMessage(), "SHIFT +9999") == 0);
-    StatusUI_AuxEncoder(INPUT_AUX_COUNT, 1);
-    CHECK(strcmp(StatusUI_AuxMessage(), "SHIFT +9999") == 0 && menu.rf_hz == rf);
+    CHECK(strcmp(StatusUI_AuxMessage(), "SHIFT -10") != 0);
+    (void)Radio_AdjustAuxEncoder(INPUT_AUX_SHIFT, 2147483647);
+    StatusUI_AuxEncoder(INPUT_AUX_SHIFT);
+    CHECK(strcmp(StatusUI_AuxMessage(), "SHIFT +1200") == 0);
+    (void)Radio_AdjustAuxEncoder(INPUT_AUX_SHIFT, 2147483647);
+    StatusUI_AuxEncoder(INPUT_AUX_SHIFT);
+    CHECK(strcmp(StatusUI_AuxMessage(), "SHIFT +1200") == 0);
+    (void)Radio_AdjustAuxEncoder(INPUT_AUX_COUNT, 1);
+    StatusUI_AuxEncoder(INPUT_AUX_COUNT);
+    CHECK(strcmp(StatusUI_AuxMessage(), "SHIFT +1200") == 0 && menu.rf_hz == rf);
     CHECK(LCD_GetText5x7Width(aux_message, 1U) < 110U);
     now_tick += 4000U;
     return 0;
@@ -626,23 +633,73 @@ int test_aux_label_stays_on_fixed_lower_row_when_number_grows(void)
     uint8_t prefix[27 * 7];
     InitControls();
     test_eeprom_message = "";
-    memset(aux_positions, 0, sizeof(aux_positions));
+    aux_message_valid = 0U;
+    Radio_ToggleRit();
     Screens_Redraw();
     memcpy(top, lcd_buffer, sizeof(top));
-    StatusUI_AuxEncoder(INPUT_AUX_SHIFT, 9);
+    (void)Radio_AdjustAuxEncoder(INPUT_AUX_SHIFT, 9);
+    StatusUI_AuxEncoder(INPUT_AUX_SHIFT);
     Screens_Redraw();
     CHECK(memcmp(top, lcd_buffer, sizeof(top)) == 0);
     for (y = 0U; y < 7U; y++)
         for (x = 0U; x < 27U; x++)
             prefix[(uint16_t)y * 27U + x] = Pixel((uint8_t)(36U + x), (uint8_t)(44U + y));
-    StatusUI_AuxEncoder(INPUT_AUX_SHIFT, 1);
+    (void)Radio_AdjustAuxEncoder(INPUT_AUX_SHIFT, 1);
+    StatusUI_AuxEncoder(INPUT_AUX_SHIFT);
     Screens_Redraw();
-    CHECK(strcmp(StatusUI_AuxMessage(), "SHIFT +10") == 0);
+    CHECK(strcmp(StatusUI_AuxMessage(), "SHIFT +100") == 0);
     CHECK(memcmp(top, lcd_buffer, sizeof(top)) == 0);
     for (y = 0U; y < 7U; y++)
         for (x = 0U; x < 27U; x++)
             CHECK(prefix[(uint16_t)y * 27U + x] == Pixel((uint8_t)(36U + x), (uint8_t)(44U + y)));
-    CHECK(LCD_GetText5x7Width("SHIFT -9999", 1U) < UI_CHANNEL_X - 36U);
+    CHECK(LCD_GetText5x7Width("SHIFT -1200", 1U) < UI_CHANNEL_X - 36U);
     now_tick += 4000U;
+    return 0;
+}
+
+
+int test_rit_shift_indicators_fit_all_meter_frames_and_survive_readout_timeout(void)
+{
+    uint8_t meter;
+    uint8_t x;
+    uint8_t y;
+    uint8_t frame[23 * 11];
+    static const char *const names[] = {"PO", "ALC", "SWR"};
+    InitControls();
+    test_eeprom_message = "";
+    aux_message_valid = 0U;
+    for (meter = 0U; meter < 3U; meter++)
+    {
+        panel.meter = meter;
+        CHECK(LCD_GetText5x7Width(names[meter], 1U) + 4U < 23U);
+        Radio_InitOffsets();
+        Screens_Redraw();
+        for (y = 0U; y < 11U; y++)
+            for (x = 0U; x < 23U; x++)
+                frame[(uint16_t)y * 23U + x] = Pixel(x, (uint8_t)(36U + y));
+        Radio_ToggleRit();
+        (void)Radio_AdjustAuxEncoder(INPUT_AUX_SHIFT, 1);
+        StatusUI_AuxEncoder(INPUT_AUX_SHIFT);
+        now_tick += 4000U;
+        Screens_Redraw();
+        CHECK(StatusUI_AuxMessage()[0] == '\0');
+        for (y = 0U; y < 11U; y++)
+            for (x = 0U; x < 23U; x++)
+                CHECK(frame[(uint16_t)y * 23U + x] == Pixel(x, (uint8_t)(36U + y)));
+        {
+            uint8_t rit_pixels = 0U;
+            uint8_t shift_pixels = 0U;
+            for (y = 38U; y < 45U; y++)
+                for (x = 0U; x < 5U; x++)
+                {
+                    rit_pixels += Pixel((uint8_t)(23U + x), y);
+                    shift_pixels += Pixel((uint8_t)(30U + x), y);
+                }
+            CHECK(rit_pixels != 0U && shift_pixels != 0U);
+        }
+    }
+    Radio_ToggleRit();
+    StatusUI_AuxEncoder(INPUT_AUX_RIT);
+    CHECK(strcmp(StatusUI_AuxMessage(), "RIT OFF") == 0);
     return 0;
 }

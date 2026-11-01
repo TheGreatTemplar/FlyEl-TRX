@@ -92,6 +92,7 @@ void RadioVfo_AdjustFilter(int32_t steps)
         value += (int32_t)RADIO_FILTER_COUNT;
     filters[mode] = (uint8_t)value;
     vfo[active_vfo].filter = filters[mode];
+    Radio_ClampOffsets();
     menu.need_redraw = 1U;
 }
 

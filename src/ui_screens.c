@@ -10,6 +10,7 @@
 #include "key_layout.h"
 #include "entry_controller.h"
 #include "radio_panel.h"
+#include "radio_control.h"
 #include "ui_status.h"
 #include "ui_settings.h"
 #include "text_utils.h"
@@ -100,7 +101,8 @@ static void DrawMainScreen(void)
     LCD_ClearBuffer();
 
     /* TX stays in the upper-left corner. */
-    tx_width = Widgets_Label(0U, 0U, (menu.tx_active != 0U) ? "TX" : "RX", menu.tx_active);
+    tx_width =
+        Widgets_Label(0U, 0U, (menu.tx_active != 0U) ? "TX" : (Radio_Locked() != 0U ? "LCK" : "RX"), menu.tx_active);
 
     mode_text = RadioMode_Name(RadioVfo_Mode());
 
@@ -163,6 +165,11 @@ static void DrawMainScreen(void)
         SMeter_Draw(menu.adc0_mv);
     }
 
+    /* Флаги не исчезают после завершения временной индикации значений. */
+    if (Radio_RitActive() != 0U)
+        LCD_Print5x7(23U, 38U, "R", 1U, CH_UNINVERT);
+    if (Radio_ShiftActive() != 0U)
+        LCD_Print5x7(30U, 38U, "S", 1U, CH_UNINVERT);
     StatusUI_Draw();
     if (header_fits == 0U && *key_name != '\0' && StatusUI_AuxMessage()[0] == '\0')
     {

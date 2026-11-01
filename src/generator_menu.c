@@ -70,6 +70,7 @@ void GeneratorMenu_Init(void)
 {
     si5351_status_t st;
 
+    Radio_InitOffsets();
     menu.band_index = 8U;
     menu.step_index = 3U; /* 100 Hz */
     Radio_InitTS();
@@ -125,6 +126,8 @@ void GeneratorMenu_Init(void)
 void GeneratorMenu_Task(void)
 {
     int32_t steps;
+    uint8_t encoder;
+    uint8_t old_rit;
     input_key_t key;
     if (LCDTest_Task() != 0U)
         menu.need_redraw = 1U;
@@ -148,11 +151,20 @@ void GeneratorMenu_Task(void)
         menu.last_key = key;
         menu.need_redraw = 1U;
     }
+    old_rit = Radio_RitActive();
     Keyboard_Task(key);
-    StatusUI_AuxEncoder(INPUT_AUX_RIT, Input_GetAuxEncoderSteps(INPUT_AUX_RIT));
-    StatusUI_AuxEncoder(INPUT_AUX_SHIFT, Input_GetAuxEncoderSteps(INPUT_AUX_SHIFT));
+    if (old_rit != Radio_RitActive())
+        StatusUI_AuxEncoder(INPUT_AUX_RIT);
+    for (encoder = 0U; encoder < INPUT_AUX_COUNT; encoder++)
+    {
+        steps = Input_GetAuxEncoderSteps((input_aux_encoder_t)encoder);
+        /* В меню и при вводе частоты ручки не накапливают отложенные изменения. */
+        if (Settings_Page() == 0U && Entry_Active() == 0U &&
+            Radio_AdjustAuxEncoder((input_aux_encoder_t)encoder, steps) != 0U)
+            StatusUI_AuxEncoder((input_aux_encoder_t)encoder);
+    }
     steps = Input_GetEncoderSteps();
-    if (steps != 0)
+    if (steps != 0 && (Settings_Page() != 0U || Radio_Locked() == 0U))
     {
         if (Scan_Active() != 0U)
             Scan_Stop();

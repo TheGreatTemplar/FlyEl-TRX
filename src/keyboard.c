@@ -111,6 +111,12 @@ static void Execute(input_key_t key, key_gesture_event_t event)
         case Key_10_2:
             RadioVfo_CycleFilter();
             break;
+        case Key_11_2:
+            Radio_ToggleRit();
+            break;
+        case Key_11_3:
+            Radio_ToggleLock();
+            break;
         case Key_9_2:
         case Key_9_3:
         {

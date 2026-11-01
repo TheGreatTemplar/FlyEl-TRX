@@ -1,6 +1,7 @@
 /* Состояния, для которых нет места в левых рамках. Только рисование, без I2C. */
 #include "ui_status.h"
 #include "radio_panel.h"
+#include "radio_control.h"
 #include "radio_vfo.h"
 #include "memory_control.h"
 #include "memory_store.h"
@@ -14,34 +15,17 @@
 #include "gmg12864.h"
 #include "ui_layout.h"
 
-static int32_t aux_positions[INPUT_AUX_COUNT];
 static char aux_message[16];
 static uint32_t aux_message_tick;
+static input_aux_encoder_t aux_message_encoder;
+static uint8_t aux_message_valid;
 
-void StatusUI_AuxEncoder(input_aux_encoder_t encoder, int32_t steps)
+void StatusUI_AuxEncoder(input_aux_encoder_t encoder)
 {
-    char number[6];
-    int32_t position;
-    if ((uint8_t)encoder >= INPUT_AUX_COUNT || steps == 0)
-    {
+    if ((uint8_t)encoder >= INPUT_AUX_COUNT)
         return;
-    }
-    /* Ограничиваем диагностический счётчик, не меняя частоту и параметры тракта. */
-    if (steps > 9999)
-        steps = 9999;
-    if (steps < -9999)
-        steps = -9999;
-    position = aux_positions[encoder] + steps;
-    if (position > 9999)
-        position = 9999;
-    if (position < -9999)
-        position = -9999;
-    aux_positions[encoder] = position;
-    aux_message[0] = '\0';
-    Text_Append(aux_message, encoder == INPUT_AUX_RIT ? "RIT " : "SHIFT ");
-    Text_Append(aux_message, position < 0 ? "-" : "+");
-    Text_U32ToDec(number, (uint32_t)(position < 0 ? -position : position), 1U);
-    Text_Append(aux_message, number);
+    aux_message_encoder = encoder;
+    aux_message_valid = 1U;
     aux_message_tick = App_GetTick500us();
     menu.need_redraw = 1U;
 }
@@ -49,12 +33,24 @@ void StatusUI_AuxEncoder(input_aux_encoder_t encoder, int32_t steps)
 
 const char *StatusUI_AuxMessage(void)
 {
+    int16_t value;
+    char number[6];
     if (EEPROM_TestStatus()[0] != '\0' || Entry_Active() != 0U || MemoryStore_Status()[0] != '\0' ||
-        Scan_Active() != 0U)
+        Scan_Active() != 0U || aux_message_valid == 0U || (uint32_t)(App_GetTick500us() - aux_message_tick) >= 4000U)
         return "";
-    if (aux_message[0] != '\0' && (uint32_t)(App_GetTick500us() - aux_message_tick) < 4000U)
+    aux_message[0] = '\0';
+    Text_Append(aux_message, aux_message_encoder == INPUT_AUX_RIT ? "RIT " : "SHIFT ");
+    if (aux_message_encoder == INPUT_AUX_RIT && Radio_RitActive() == 0U)
+    {
+        Text_Append(aux_message, "OFF");
         return aux_message;
-    return "";
+    }
+    /* Читаем текущее значение, чтобы смена режима/фильтра сразу меняла индикацию. */
+    value = Radio_OffsetHz(aux_message_encoder);
+    Text_Append(aux_message, value < 0 ? "-" : "+");
+    Text_U32ToDec(number, (uint32_t)(value < 0 ? -value : value), 1U);
+    Text_Append(aux_message, number);
+    return aux_message;
 }
 
 

@@ -34,4 +34,20 @@ void Radio_SetFrequency(uint32_t hz);
 
 void Radio_InitTS(void);
 
+/* Основной контекст: сброс RIT/SHIFT/LOCK при запуске, значения в Гц. */
+void Radio_InitOffsets(void);
+void Radio_ToggleRit(void);
+void Radio_ToggleLock(void);
+uint8_t Radio_RitActive(void);
+uint8_t Radio_ShiftActive(void);
+uint8_t Radio_Locked(void);
+int16_t Radio_OffsetHz(input_aux_encoder_t encoder);
+/* Шаг 10 Гц, RIT только при включении; SHIFT автоматически активен вне нуля. */
+uint8_t Radio_AdjustAuxEncoder(input_aux_encoder_t encoder, int32_t steps);
+/* ±1200 Гц, CW/RTTY F3 ±250 Гц; AM — ноль. Обновить после смены режима/фильтра. */
+int16_t Radio_ShiftLimitHz(void);
+void Radio_ClampOffsets(void);
+/* Частота приёма с RIT; VFO/канал и передача сохраняют базовую частоту. */
+uint32_t Radio_ReceiveHz(void);
+
 #endif

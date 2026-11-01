@@ -54,6 +54,10 @@ const char *KeyLayout_Name(input_key_t key)
             return "FILTER";
         case Key_10_3:
             return "TS";
+        case Key_11_2:
+            return "RIT";
+        case Key_11_3:
+            return "LOCK";
         default:
             return Input_KeyName(key);
     }
